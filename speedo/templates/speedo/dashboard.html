@@ -1,0 +1,201 @@
+{% extends 'speedo/base.html' %}
+{% block header_extras %}
+    {% if data %}
+    <div class="last-update">
+        <i class="fas fa-sync-alt"></i>
+        <span>Обновлено: {{ data.timestamp|date:"d.m.Y H:i:s" }}</span>
+    </div>
+    {% endif %}
+{% endblock %}
+{% block content %}
+<div class="dashboard-grid">
+    <!-- Текущая скорость -->
+    <div class="card speed-card">
+        <div class="card-body">
+            <div class="metric-header">
+                <h2 class="metric-title">Скорость</h2>
+                <div class="metric-icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+            </div>
+            <div class="metric-value primary">
+                {% if data %}
+                <span class="value">{{ data.speed|floatformat:1 }}</span>
+                <span class="unit">км/ч</span>
+                {% else %}
+                <span class="value">—</span>
+                <span class="unit">км/ч</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Максимальная скорость -->
+    <div class="card">
+        <div class="card-body">
+            <div class="metric-header">
+                <h2 class="metric-title">Макс. скорость</h2>
+                <div class="metric-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
+            </div>
+            <div class="metric-value">
+                <span class="value">65.0</span>
+                <span class="unit">км/ч</span>
+            </div>
+        </div>
+    </div>
+    <!-- Средняя скорость -->
+    <div class="card">
+        <div class="card-body">
+            <div class="metric-header">
+                <h2 class="metric-title">Средняя скорость</h2>
+                <div class="metric-icon">
+                    <i class="fas fa-gauge-high"></i>
+                </div>
+            </div>
+            <div class="metric-value">
+                <span class="value">32.5</span>
+                <span class="unit">км/ч</span>
+            </div>
+        </div>
+    </div>
+    <!-- Общее расстояние -->
+    <div class="card">
+        <div class="card-body">
+            <div class="metric-header">
+                <h2 class="metric-title">Расстояние</h2>
+                <div class="metric-icon">
+                    <i class="fas fa-road"></i>
+                </div>
+            </div>
+            <div class="metric-value">
+                <span class="value">12.8</span>
+                <span class="unit">км</span>
+            </div>
+        </div>
+    </div>
+    <!-- Калории -->
+    <div class="card">
+        <div class="card-body">
+            <div class="metric-header">
+                <h2 class="metric-title">Калории</h2>
+                <div class="metric-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+            </div>
+            <div class="metric-value">
+                <span class="value">350</span>
+                <span class="unit">ккал</span>
+            </div>
+        </div>
+    </div>
+    <!-- GPS данные -->
+    <div class="card gps-card">
+        <div class="card-body">
+            <div class="metric-header">
+                <h2 class="metric-title">GPS координаты</h2>
+                <div class="metric-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+            </div>
+            {% if data %}
+            <div class="gps-coordinates">
+                <div class="coord-group">
+                    <span class="coord-label">Широта</span>
+                    <span class="coord-value">{{ data.latitude }}</span>
+                </div>
+                <div class="coord-group">
+                    <span class="coord-label">Долгота</span>
+                    <span class="coord-value">{{ data.longitude }}</span>
+                </div>
+            </div>
+            {% else %}
+            <div class="gps-coordinates">
+                <div class="coord-group">
+                    <span class="coord-label">Широта</span>
+                    <span class="coord-value">—</span>
+                </div>
+                <div class="coord-group">
+                    <span class="coord-label">Долгота</span>
+                    <span class="coord-value">—</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Состояние датчиков -->
+    <div class="card sensors-card">
+        <div class="card-body">
+            <div class="metric-header mb-3">
+                <h2 class="metric-title">Состояние датчиков</h2>
+                <div class="metric-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+            </div>
+            <div class="sensors-grid">
+                {% if data %}
+                <div class="sensor-item">
+                    <span class="sensor-label">Датчик Холла</span>
+                    {% if data.hall_sensor %}
+                    <span class="sensor-status active">
+                        <i class="fas fa-circle"></i> ВКЛ
+                    </span>
+                    {% else %}
+                    <span class="sensor-status">
+                        <i class="fas fa-circle"></i> ВЫКЛ
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="sensor-item">
+                    <span class="sensor-label">RGB LED</span>
+                    <span class="sensor-status" style="color:{{ data.rgb_led }}">
+                        <i class="fas fa-lightbulb"></i> {{ data.rgb_led }}
+                    </span>
+                </div>
+                <div class="sensor-item">
+                    <span class="sensor-label">Пищалка</span>
+                    {% if data.buzzer %}
+                    <span class="sensor-status active danger">
+                        <i class="fas fa-volume-high"></i> ВКЛ
+                    </span>
+                    {% else %}
+                    <span class="sensor-status">
+                        <i class="fas fa-volume-xmark"></i> ВЫКЛ
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="sensor-item">
+                    <span class="sensor-label">Тумблер 1</span>
+                    {% if data.switch1 %}
+                    <span class="sensor-status active info">
+                        <i class="fas fa-toggle-on"></i> ВКЛ
+                    </span>
+                    {% else %}
+                    <span class="sensor-status">
+                        <i class="fas fa-toggle-off"></i> ВЫКЛ
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="sensor-item">
+                    <span class="sensor-label">Тумблер 2</span>
+                    {% if data.switch2 %}
+                    <span class="sensor-status active info">
+                        <i class="fas fa-toggle-on"></i> ВКЛ
+                    </span>
+                    {% else %}
+                    <span class="sensor-status">
+                        <i class="fas fa-toggle-off"></i> ВЫКЛ
+                    </span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="no-data">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>Нет данных с датчиков</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+db.sqlite3-journal
+media
+static/admin
+static/rest_framework
+
+# Если вы используете Poetry для управления зависимостями
+#poetry.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.env
+.venv
+
+# Резервные файлы и кеш
+*~
+.~*
+*.bak
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage.xml
+*.cover
+
+# ESP32/Arduino
+build/
+.pio
+.pioenvs
+.piolibdeps
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
