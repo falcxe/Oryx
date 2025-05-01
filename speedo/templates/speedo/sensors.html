@@ -1,0 +1,661 @@
+{% extends 'speedo/base.html' %}
+
+{% block header_extras %}
+    {% if data %}
+    <div class="last-update">
+        <i class="fas fa-sync-alt"></i>
+        <span>Обновлено: {{ data.timestamp|date:"d.m.Y H:i:s" }}</span>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="sensors-container">
+    <div class="screen-header">
+        <div class="page-title">Данные с датчиков</div>
+        <div class="sensor-controls">
+            <button class="btn btn-primary" id="startRecordingBtn">
+                <i class="fas fa-record-vinyl"></i> Начать запись
+            </button>
+            <button class="btn btn-danger d-none" id="stopRecordingBtn">
+                <i class="fas fa-stop"></i> Остановить
+            </button>
+            <select class="form-select sensor-interval" id="updateInterval">
+                <option value="1000">1 сек</option>
+                <option value="500" selected>0.5 сек</option>
+                <option value="200">0.2 сек</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Акселерометр -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Акселерометр</h3>
+                    <div class="card-tools">
+                        <button class="btn btn-sm btn-outline-secondary" id="resetAccelChart">
+                            <i class="fas fa-redo"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="accelerometerChart" height="250"></canvas>
+
+                    <div class="current-values mt-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="value-card x-axis">
+                                    <div class="value-label">X-ось</div>
+                                    <div class="value-display" id="accelX">0.00</div>
+                                    <div class="value-unit">м/с²</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="value-card y-axis">
+                                    <div class="value-label">Y-ось</div>
+                                    <div class="value-display" id="accelY">0.00</div>
+                                    <div class="value-unit">м/с²</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="value-card z-axis">
+                                    <div class="value-label">Z-ось</div>
+                                    <div class="value-display" id="accelZ">0.00</div>
+                                    <div class="value-unit">м/с²</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Гироскоп -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Ориентация устройства</h3>
+                    <div class="card-tools">
+                        <button class="btn btn-sm btn-outline-secondary" id="resetOrientationChart">
+                            <i class="fas fa-redo"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="device-orientation-container">
+                        <div class="device-model">
+                            <div class="device-front">Передняя часть</div>
+                            <div class="device-back">Задняя часть</div>
+                            <div class="device-left">Левая сторона</div>
+                            <div class="device-right">Правая сторона</div>
+                            <div class="device-top">Верх</div>
+                            <div class="device-bottom">Низ</div>
+                        </div>
+
+                        <div class="orientation-values mt-3">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="value-card">
+                                        <div class="value-label">Наклон (X)</div>
+                                        <div class="value-display" id="orientationX">0°</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="value-card">
+                                        <div class="value-label">Наклон (Y)</div>
+                                        <div class="value-display" id="orientationY">0°</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="value-card">
+                                        <div class="value-label">Поворот (Z)</div>
+                                        <div class="value-display" id="orientationZ">0°</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- График скорости -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Скорость движения</h3>
+                    <div class="card-tools">
+                        <button class="btn btn-sm btn-outline-secondary" id="resetSpeedChart">
+                            <i class="fas fa-redo"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="speedChart" height="250"></canvas>
+
+                    <div class="speed-stats mt-3">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="value-card">
+                                    <div class="value-label">Текущая</div>
+                                    <div class="value-display" id="currentSpeed">0.0</div>
+                                    <div class="value-unit">км/ч</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="value-card">
+                                    <div class="value-label">Средняя</div>
+                                    <div class="value-display" id="avgSpeed">0.0</div>
+                                    <div class="value-unit">км/ч</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="value-card">
+                                    <div class="value-label">Максимальная</div>
+                                    <div class="value-display" id="maxSpeed">0.0</div>
+                                    <div class="value-unit">км/ч</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Уровень заряда батареи -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Батарея и системная информация</h3>
+                </div>
+                <div class="card-body">
+                    <div class="system-info">
+                        <div class="battery-container">
+                            <div class="battery-level-container">
+                                <div class="battery-outline">
+                                    <div class="battery-level" id="batteryLevel" style="width: 75%;"></div>
+                                </div>
+                                <div class="battery-cap"></div>
+                            </div>
+                            <div class="battery-percentage" id="batteryPercentage">75%</div>
+                        </div>
+
+                        <div class="system-stats mt-4">
+                            <table class="table">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">ID устройства</th>
+                                        <td id="deviceId">ESP32-001</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Время работы</th>
+                                        <td id="uptime">2ч 15м 30с</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Интервал обновления</th>
+                                        <td id="updateIntervalDisplay">0.5 сек</td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Статус подключения</th>
+                                        <td><span class="status-indicator" id="connectionStatus">Подключено</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Настройка графиков
+        const accelCtx = document.getElementById('accelerometerChart').getContext('2d');
+        const speedCtx = document.getElementById('speedChart').getContext('2d');
+
+        // Данные для графиков
+        const maxDataPoints = 50;
+        let accelData = {
+            labels: Array(maxDataPoints).fill(''),
+            datasets: [
+                {
+                    label: 'X-ось',
+                    data: Array(maxDataPoints).fill(0),
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'Y-ось',
+                    data: Array(maxDataPoints).fill(0),
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'Z-ось',
+                    data: Array(maxDataPoints).fill(0),
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        };
+
+        let speedData = {
+            labels: Array(maxDataPoints).fill(''),
+            datasets: [
+                {
+                    label: 'Скорость',
+                    data: Array(maxDataPoints).fill(0),
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        };
+
+        // Опции для графиков
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: false
+                },
+                x: {
+                    display: false
+                }
+            },
+            animation: {
+                duration: 0
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        };
+
+        // Создание графиков
+        const accelChart = new Chart(accelCtx, {
+            type: 'line',
+            data: accelData,
+            options: {
+                ...chartOptions,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: -10,
+                        max: 10
+                    },
+                    x: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        const speedChart = new Chart(speedCtx, {
+            type: 'line',
+            data: speedData,
+            options: {
+                ...chartOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        min: 0,
+                        max: 50
+                    },
+                    x: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Функции для обновления данных
+        function updateCharts(data) {
+            // Обновление данных акселерометра
+            if (data.hasOwnProperty('acceleration')) {
+                // Сдвиг массивов данных
+                accelData.datasets[0].data.shift();
+                accelData.datasets[1].data.shift();
+                accelData.datasets[2].data.shift();
+
+                // Добавление новых данных
+                accelData.datasets[0].data.push(data.acceleration.x || 0);
+                accelData.datasets[1].data.push(data.acceleration.y || 0);
+                accelData.datasets[2].data.push(data.acceleration.z || 0);
+
+                // Обновление меток времени
+                accelData.labels.shift();
+                accelData.labels.push('');
+
+                // Обновление текущих значений
+                document.getElementById('accelX').textContent = (data.acceleration.x || 0).toFixed(2);
+                document.getElementById('accelY').textContent = (data.acceleration.y || 0).toFixed(2);
+                document.getElementById('accelZ').textContent = (data.acceleration.z || 0).toFixed(2);
+
+                // Обновление графика
+                accelChart.update();
+            }
+
+            // Обновление данных скорости
+            if (data.hasOwnProperty('speed')) {
+                // Сдвиг массива данных
+                speedData.datasets[0].data.shift();
+
+                // Добавление новых данных
+                speedData.datasets[0].data.push(data.speed || 0);
+
+                // Обновление меток времени
+                speedData.labels.shift();
+                speedData.labels.push('');
+
+                // Обновление текущих значений
+                document.getElementById('currentSpeed').textContent = (data.speed || 0).toFixed(1);
+
+                // Обновление максимальной и средней скорости
+                if (data.hasOwnProperty('max_speed')) {
+                    document.getElementById('maxSpeed').textContent = (data.max_speed || 0).toFixed(1);
+                }
+
+                if (data.hasOwnProperty('avg_speed')) {
+                    document.getElementById('avgSpeed').textContent = (data.avg_speed || 0).toFixed(1);
+                }
+
+                // Обновление графика
+                speedChart.update();
+            }
+
+            // Обновление уровня заряда батареи
+            if (data.hasOwnProperty('battery')) {
+                const batteryLevel = document.getElementById('batteryLevel');
+                const batteryPercentage = document.getElementById('batteryPercentage');
+
+                batteryLevel.style.width = data.battery + '%';
+                batteryPercentage.textContent = data.battery + '%';
+
+                // Изменение цвета в зависимости от уровня заряда
+                if (data.battery > 50) {
+                    batteryLevel.style.backgroundColor = '#4CAF50';
+                } else if (data.battery > 20) {
+                    batteryLevel.style.backgroundColor = '#FFC107';
+                } else {
+                    batteryLevel.style.backgroundColor = '#F44336';
+                }
+            }
+
+            // Обновление ID устройства
+            if (data.hasOwnProperty('device_id')) {
+                document.getElementById('deviceId').textContent = data.device_id;
+            }
+
+            // Обновление время последнего обновления
+            if (data.hasOwnProperty('timestamp')) {
+                document.querySelector('.last-update span').textContent = 'Обновлено: ' +
+                    new Date(data.timestamp).toLocaleString();
+            }
+        }
+
+        // Функция для получения данных с сервера
+        function fetchSensorData() {
+            fetch('/api/latest/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCharts(data.data);
+                        updateConnectionStatus(true);
+                    } else {
+                        console.log('Ошибка получения данных:', data.message);
+                        updateConnectionStatus(false);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка загрузки данных:', error);
+                    updateConnectionStatus(false);
+                });
+        }
+
+        // Обновление статуса подключения
+        function updateConnectionStatus(isConnected) {
+            const statusElement = document.getElementById('connectionStatus');
+
+            if (isConnected) {
+                statusElement.innerHTML = '<i class="fas fa-circle text-success"></i> Подключено';
+                statusElement.classList.remove('disconnected');
+                statusElement.classList.add('connected');
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-circle text-danger"></i> Отключено';
+                statusElement.classList.remove('connected');
+                statusElement.classList.add('disconnected');
+            }
+        }
+
+        // Настройка интервала обновления
+        let updateInterval = 500; // 0.5 секунды по умолчанию
+        let updateTimer = null;
+        let isRecording = false;
+
+        const updateIntervalSelect = document.getElementById('updateInterval');
+        const startRecordingBtn = document.getElementById('startRecordingBtn');
+        const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+
+        updateIntervalSelect.addEventListener('change', function() {
+            updateInterval = parseInt(this.value);
+            document.getElementById('updateIntervalDisplay').textContent = (updateInterval / 1000) + ' сек';
+
+            if (isRecording) {
+                clearInterval(updateTimer);
+                updateTimer = setInterval(fetchSensorData, updateInterval);
+            }
+        });
+
+        // Кнопки управления записью
+        startRecordingBtn.addEventListener('click', function() {
+            isRecording = true;
+            startRecordingBtn.classList.add('d-none');
+            stopRecordingBtn.classList.remove('d-none');
+
+            // Начать получение данных
+            updateTimer = setInterval(fetchSensorData, updateInterval);
+        });
+
+        stopRecordingBtn.addEventListener('click', function() {
+            isRecording = false;
+            stopRecordingBtn.classList.add('d-none');
+            startRecordingBtn.classList.remove('d-none');
+
+            // Остановить получение данных
+            clearInterval(updateTimer);
+        });
+
+        // Кнопки сброса графиков
+        document.getElementById('resetAccelChart').addEventListener('click', function() {
+            accelData.datasets.forEach(dataset => {
+                dataset.data = Array(maxDataPoints).fill(0);
+            });
+            accelChart.update();
+        });
+
+        document.getElementById('resetSpeedChart').addEventListener('click', function() {
+            speedData.datasets[0].data = Array(maxDataPoints).fill(0);
+            speedChart.update();
+        });
+
+        // Получить данные при загрузке страницы
+        fetchSensorData();
+    });
+</script>
+
+<style>
+.sensors-container {
+    padding: 20px;
+}
+
+.sensor-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sensor-interval {
+    width: 100px;
+}
+
+.card {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #eee;
+}
+
+.card-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.card-tools {
+    display: flex;
+    gap: 10px;
+}
+
+.current-values, .speed-stats, .orientation-values {
+    margin-top: 20px;
+}
+
+.value-card {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.value-label {
+    font-size: 14px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+
+.value-display {
+    font-size: 24px;
+    font-weight: 600;
+    color: #212529;
+}
+
+.value-unit {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+.x-axis .value-display {
+    color: rgba(255, 99, 132, 1);
+}
+
+.y-axis .value-display {
+    color: rgba(54, 162, 235, 1);
+}
+
+.z-axis .value-display {
+    color: rgba(75, 192, 192, 1);
+}
+
+.battery-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.battery-level-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.battery-outline {
+    width: 200px;
+    height: 80px;
+    border: 3px solid #343a40;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.battery-level {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 100%;
+    width: 75%;
+    background-color: #4CAF50;
+    transition: width 0.5s ease, background-color 0.5s ease;
+}
+
+.battery-cap {
+    width: 10px;
+    height: 30px;
+    background-color: #343a40;
+    border-radius: 0 4px 4px 0;
+    margin-left: -2px;
+}
+
+.battery-percentage {
+    font-size: 36px;
+    font-weight: 700;
+    margin-top: 10px;
+    color: #343a40;
+}
+
+.device-orientation-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.device-model {
+    width: 150px;
+    height: 250px;
+    position: relative;
+    perspective: 1000px;
+    margin-bottom: 30px;
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.connected {
+    color: #198754;
+}
+
+.disconnected {
+    color: #dc3545;
+}
+</style>
+{% endblock %}

@@ -198,4 +198,80 @@
         </div>
     </div>
 </div>
+<script>
+// Функция для получения последних данных с сервера
+function fetchLatestData() {
+    fetch('/api/latest/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateDashboard(data.data);
+            } else {
+                console.log('Ошибка получения данных:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки данных:', error);
+        });
+}
+
+// Функция для обновления показателей на дашборде
+function updateDashboard(data) {
+    // Обновляем скорость
+    if (data.hasOwnProperty('speed')) {
+        document.querySelector('.speed-card .value').textContent = data.speed.toFixed(1);
+    }
+
+    // Обновляем максимальную скорость
+    if (data.hasOwnProperty('max_speed')) {
+        document.querySelector('.card:nth-child(2) .value').textContent = data.max_speed;
+    }
+
+    // Обновляем среднюю скорость
+    if (data.hasOwnProperty('avg_speed')) {
+        document.querySelector('.card:nth-child(3) .value').textContent = data.avg_speed.toFixed(1);
+    }
+
+    // Обновляем расстояние
+    if (data.hasOwnProperty('distance')) {
+        document.querySelector('.card:nth-child(4) .value').textContent = data.distance.toFixed(1);
+    }
+
+    // Обновляем калории
+    if (data.hasOwnProperty('calories')) {
+        document.querySelector('.card:nth-child(5) .value').textContent = data.calories;
+    }
+
+    // Обновляем координаты GPS
+    if (data.hasOwnProperty('latitude') && data.hasOwnProperty('longitude')) {
+        document.querySelector('.gps-card .coord-group:nth-child(1) .coord-value').textContent = data.latitude;
+        document.querySelector('.gps-card .coord-group:nth-child(2) .coord-value').textContent = data.longitude;
+    }
+
+    // Обновляем температуру
+    if (data.hasOwnProperty('temperature')) {
+        document.querySelector('.card:nth-child(6) .value').textContent = data.temperature + '°C';
+    }
+
+    // Обновляем время последнего обновления
+    if (data.hasOwnProperty('timestamp')) {
+        document.querySelector('.last-update span').textContent = 'Последнее обновление: ' +
+            new Date(data.timestamp).toLocaleTimeString();
+    }
+
+    // Датчики
+    document.querySelector('.sensor-item:nth-child(1) .sensor-status').innerHTML = data.hall_sensor ? '<i class="fas fa-circle"></i> ВКЛ' : '<i class="fas fa-circle"></i> ВЫКЛ';
+    document.querySelector('.sensor-item:nth-child(2) .sensor-status').innerHTML = '<i class="fas fa-lightbulb"></i> ' + data.rgb_led;
+    document.querySelector('.sensor-item:nth-child(2) .sensor-status').style.color = data.rgb_led;
+    document.querySelector('.sensor-item:nth-child(3) .sensor-status').innerHTML = data.buzzer ? '<i class="fas fa-volume-high"></i> ВКЛ' : '<i class="fas fa-volume-xmark"></i> ВЫКЛ';
+    document.querySelector('.sensor-item:nth-child(4) .sensor-status').innerHTML = data.switch1 ? '<i class="fas fa-toggle-on"></i> ВКЛ' : '<i class="fas fa-toggle-off"></i> ВЫКЛ';
+    document.querySelector('.sensor-item:nth-child(5) .sensor-status').innerHTML = data.switch2 ? '<i class="fas fa-toggle-on"></i> ВКЛ' : '<i class="fas fa-toggle-off"></i> ВЫКЛ';
+}
+
+// Запускаем обновление данных каждые 5 секунд
+setInterval(fetchLatestData, 5000);
+
+// Загружаем данные при загрузке страницы
+document.addEventListener('DOMContentLoaded', fetchLatestData);
+</script>
 {% endblock %}

@@ -1,5 +1,620 @@
 {% extends 'speedo/base.html' %}
+
+{% block header_extras %}
+<div class="route-filters">
+    <div class="dropdown">
+        <button class="btn dropdown-toggle" type="button" id="periodDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-calendar"></i> Период
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="periodDropdown">
+            <li><a class="dropdown-item" href="#">Все время</a></li>
+            <li><a class="dropdown-item" href="#">Последние 7 дней</a></li>
+            <li><a class="dropdown-item" href="#">Последние 30 дней</a></li>
+            <li><a class="dropdown-item" href="#">Этот год</a></li>
+        </ul>
+    </div>
+    <div class="dropdown">
+        <button class="btn dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-sort"></i> Сортировка
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+            <li><a class="dropdown-item" href="#">По дате (сначала новые)</a></li>
+            <li><a class="dropdown-item" href="#">По дате (сначала старые)</a></li>
+            <li><a class="dropdown-item" href="#">По дистанции (макс.)</a></li>
+            <li><a class="dropdown-item" href="#">По времени (макс.)</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="page-title">Маршруты</div>
-<div class="empty-state">Пока нет маршрутов. Добавьте новый маршрут или начните поездку.</div>
+<div class="route-container">
+    <div class="header-title mb-4">
+        <h1>История</h1>
+        <p class="text-muted">Сохраненные поездки</p>
+    </div>
+
+    <div class="dashboard-grid mb-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="metric-header">
+                    <h5 class="metric-title">Общая дистанция</h5>
+                    <div class="metric-icon">
+                        <i class="fas fa-road"></i>
+                    </div>
+                </div>
+                <div class="metric-value">
+                    <div class="value">356.2</div>
+                    <div class="unit">км</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="metric-header">
+                    <h5 class="metric-title">Общее время</h5>
+                    <div class="metric-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div class="metric-value">
+                    <div class="value">32ч 45м</div>
+                    <div class="unit"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="metric-header">
+                    <h5 class="metric-title">Поездки</h5>
+                    <div class="metric-icon">
+                        <i class="fas fa-bicycle"></i>
+                    </div>
+                </div>
+                <div class="metric-value">
+                    <div class="value">42</div>
+                    <div class="unit"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="metric-header">
+                    <h5 class="metric-title">Средняя скорость</h5>
+                    <div class="metric-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                </div>
+                <div class="metric-value">
+                    <div class="value">19.4</div>
+                    <div class="unit">км/ч</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="metric-header">
+                    <h5 class="metric-title">Калории</h5>
+                    <div class="metric-icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                </div>
+                <div class="metric-value">
+                    <div class="value">12,450</div>
+                    <div class="unit">ккал</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <h5 class="mb-3">Последние поездки</h5>
+        <div class="trips-list">
+            <!-- Карточка поездки 1 -->
+            <div class="card trip-list-item" data-trip-id="1" role="button">
+                <div class="card-body">
+                    <div class="trip-list-row">
+                        <div class="trip-date">
+                            <div class="trip-day">21</div>
+                            <div class="trip-month">июня</div>
+                            <div class="trip-time">17:30</div>
+                        </div>
+                        <div class="trip-info">
+                            <h5 class="trip-title">Маршрут в университет</h5>
+                            <div class="trip-metrics">
+                                <div class="trip-metric"><i class="fas fa-route"></i> 12.4 км</div>
+                                <div class="trip-metric"><i class="fas fa-stopwatch"></i> 42 мин</div>
+                                <div class="trip-metric"><i class="fas fa-tachometer-alt"></i> 17.8 км/ч</div>
+                                <div class="trip-metric"><i class="fas fa-fire"></i> 340 ккал</div>
+                            </div>
+                        </div>
+                        <div class="trip-view-icon">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка поездки 2 -->
+            <div class="card trip-list-item" data-trip-id="2" role="button">
+                <div class="card-body">
+                    <div class="trip-list-row">
+                        <div class="trip-date">
+                            <div class="trip-day">19</div>
+                            <div class="trip-month">июня</div>
+                            <div class="trip-time">08:15</div>
+                        </div>
+                        <div class="trip-info">
+                            <h5 class="trip-title">Парковый маршрут</h5>
+                            <div class="trip-metrics">
+                                <div class="trip-metric"><i class="fas fa-route"></i> 8.2 км</div>
+                                <div class="trip-metric"><i class="fas fa-stopwatch"></i> 28 мин</div>
+                                <div class="trip-metric"><i class="fas fa-tachometer-alt"></i> 17.6 км/ч</div>
+                                <div class="trip-metric"><i class="fas fa-fire"></i> 220 ккал</div>
+                            </div>
+                        </div>
+                        <div class="trip-view-icon">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Карточка поездки 3 -->
+            <div class="card trip-list-item" data-trip-id="3" role="button">
+                <div class="card-body">
+                    <div class="trip-list-row">
+                        <div class="trip-date">
+                            <div class="trip-day">18</div>
+                            <div class="trip-month">июня</div>
+                            <div class="trip-time">15:40</div>
+                        </div>
+                        <div class="trip-info">
+                            <h5 class="trip-title">Городская поездка</h5>
+                            <div class="trip-metrics">
+                                <div class="trip-metric"><i class="fas fa-route"></i> 15.8 км</div>
+                                <div class="trip-metric"><i class="fas fa-stopwatch"></i> 54 мин</div>
+                                <div class="trip-metric"><i class="fas fa-tachometer-alt"></i> 17.5 км/ч</div>
+                                <div class="trip-metric"><i class="fas fa-fire"></i> 410 ккал</div>
+                            </div>
+                        </div>
+                        <div class="trip-view-icon">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Пагинация -->
+    <div class="pagination-container">
+        <div class="pagination-controls">
+            <button class="pagination-btn" disabled>
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="pagination-pages">
+                <button class="pagination-btn active">1</button>
+                <button class="pagination-btn">2</button>
+                <button class="pagination-btn">3</button>
+            </div>
+            <button class="pagination-btn">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div class="pagination-status">
+            Страница 1 из 3 (Всего поездок: 42)
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для деталей поездки -->
+<div class="modal fade" id="tripModal" tabindex="-1" aria-labelledby="tripModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content trip-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tripModalLabel">Детали поездки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="trip-header">
+                    <div>
+                        <div class="route-name" id="tripRouteName">Маршрут в университет</div>
+                        <div class="trip-datetime" id="tripDateTime">21 июня 2023, 17:30</div>
+                    </div>
+                    <div class="trip-weather">
+                        <i class="fas fa-sun"></i> 24°C, Солнечно
+                    </div>
+                </div>
+
+                <div class="trip-metrics-grid">
+                    <div class="trip-metric">
+                        <div class="metric-value" id="tripDistance">12.4 км</div>
+                        <div class="metric-label">Дистанция</div>
+                    </div>
+                    <div class="trip-metric">
+                        <div class="metric-value" id="tripDuration">42 мин</div>
+                        <div class="metric-label">Время</div>
+                    </div>
+                    <div class="trip-metric">
+                        <div class="metric-value" id="tripAvgSpeed">17.8 км/ч</div>
+                        <div class="metric-label">Средняя скорость</div>
+                    </div>
+                    <div class="trip-metric">
+                        <div class="metric-value" id="tripMaxSpeed">32.1 км/ч</div>
+                        <div class="metric-label">Макс. скорость</div>
+                    </div>
+                    <div class="trip-metric">
+                        <div class="metric-value" id="tripCalories">340 кал</div>
+                        <div class="metric-label">Калории</div>
+                    </div>
+                </div>
+
+                <div class="trip-map-container">
+                    <div id="tripMap" style="height: 300px;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash-alt"></i> Удалить поездку</button>
+                <button type="button" class="btn btn-outline-primary btn-sm"><i class="fas fa-file-export"></i> Экспорт</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Обработчик для открытия модального окна при клике на карточку поездки
+        const tripItems = document.querySelectorAll('.trip-list-item');
+        tripItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const tripId = this.getAttribute('data-trip-id');
+                const tripModal = new bootstrap.Modal(document.getElementById('tripModal'));
+                tripModal.show();
+
+                // Создание карты в модальном окне
+                setTimeout(() => {
+                    const tripMap = L.map('tripMap').setView([55.7558, 37.6173], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    }).addTo(tripMap);
+
+                    // Данные маршрута в зависимости от ID поездки
+                    let routeData;
+
+                    if (tripId === '1') {
+                        routeData = [
+                            [55.755, 37.617],
+                            [55.762, 37.625],
+                            [55.768, 37.635],
+                            [55.770, 37.650],
+                            [55.764, 37.641]
+                        ];
+                        document.getElementById('tripRouteName').textContent = 'Маршрут в университет';
+                        document.getElementById('tripDistance').textContent = '12.4 км';
+                    } else if (tripId === '2') {
+                        routeData = [
+                            [55.758, 37.620],
+                            [55.761, 37.628],
+                            [55.765, 37.631],
+                            [55.763, 37.626],
+                            [55.758, 37.620]
+                        ];
+                        document.getElementById('tripRouteName').textContent = 'Парковый маршрут';
+                        document.getElementById('tripDistance').textContent = '8.2 км';
+                    } else {
+                        routeData = [
+                            [55.753, 37.615],
+                            [55.759, 37.625],
+                            [55.764, 37.620],
+                            [55.760, 37.615],
+                            [55.753, 37.615]
+                        ];
+                        document.getElementById('tripRouteName').textContent = 'Городская поездка';
+                        document.getElementById('tripDistance').textContent = '15.8 км';
+                    }
+
+                    const tripPath = L.polyline(routeData, {color: 'blue'}).addTo(tripMap);
+                    tripMap.fitBounds(tripPath.getBounds());
+
+                    // Добавить маркеры
+                    L.marker(routeData[0], {
+                        icon: L.divIcon({
+                            html: '<i class="fas fa-map-pin" style="color: red; font-size: 20px;"></i>',
+                            className: 'map-marker-icon'
+                        })
+                    }).addTo(tripMap);
+
+                    L.marker(routeData[routeData.length - 1], {
+                        icon: L.divIcon({
+                            html: '<i class="fas fa-flag-checkered" style="color: green; font-size: 20px;"></i>',
+                            className: 'map-marker-icon'
+                        })
+                    }).addTo(tripMap);
+                }, 500);
+            });
+        });
+    });
+</script>
+
+<style>
+.route-filters {
+    display: flex;
+    gap: 10px;
+}
+
+.route-filters .dropdown-toggle {
+    background-color: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    color: #f5f5f5;
+}
+
+.dropdown-menu {
+    background-color: #1e1e1e;
+    border: 1px solid #2a2a2a;
+}
+.modal-content trip-modal{
+    background-color: #1e1e1e;
+    border-radius: 10px;
+}
+
+.trip-modal{
+    background-color: #1e1e1e;
+    border-radius: 10px;
+}
+.dropdown-item {
+    color: #f5f5f5;
+}
+
+.dropdown-item:hover {
+    background-color: #2a2a2a;
+    color: #f5f5f5;
+}
+
+.trips-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+}
+
+.trips-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.trip-list-item {
+    margin-bottom: 0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.trip-list-item:hover {
+    background-color: #282828;
+}
+
+.trip-list-row {
+    display: flex;
+    align-items: center;
+}
+
+.trip-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    padding-right: 20px;
+    margin-right: 20px;
+    border-right: 1px solid #2a2a2a;
+    text-align: center;
+}
+
+.trip-day {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #f5f5f5;
+    line-height: 1;
+}
+
+.trip-month {
+    font-size: 0.85rem;
+    color: #a0a0a0;
+    margin-bottom: 5px;
+}
+
+.trip-time {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+    background-color: rgba(124, 77, 255, 0.15);
+    border-radius: 4px;
+    color: #7c4dff;
+}
+
+.trip-info {
+    flex-grow: 1;
+}
+
+.trip-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #f5f5f5;
+}
+
+.trip-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+}
+
+.trip-metric {
+    color: #a0a0a0;
+    font-size: 0.9rem;
+}
+
+.trip-metric i {
+    margin-right: 6px;
+    color: #7c4dff;
+}
+
+.trip-view-icon {
+    color: #7c4dff;
+    opacity: 0.7;
+    margin-left: 15px;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trip-list-item:hover .trip-view-icon {
+    opacity: 1;
+}
+
+/* Стиль пагинации */
+.pagination-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.pagination-status {
+    color: #a0a0a0;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pagination-pages {
+    display: flex;
+    gap: 5px;
+}
+
+.pagination-btn {
+    background-color: #1e1e1e;
+    border: 1px solid #2a2a2a;
+    color: #a0a0a0;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #282828;
+    color: #f5f5f5;
+}
+
+.pagination-btn.active {
+    background-color: #7c4dff;
+    border-color: #7c4dff;
+    color: #fff;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Стиль для активного пункта меню История */
+:root {
+    --history-color: #7c4dff;
+}
+
+.nav-link[href="/routes/"].active {
+    background-color: rgba(124, 77, 255, 0.15);
+    color: #7c4dff !important;
+}
+
+.nav-link[href="/routes/"].active i {
+    color: #7c4dff !important;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .trip-list-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .trip-date {
+        flex-direction: row;
+        justify-content: flex-start;
+        width: 100%;
+        padding-right: 0;
+        padding-bottom: 10px;
+        margin-right: 0;
+        margin-bottom: 10px;
+        border-right: none;
+        border-bottom: 1px solid #2a2a2a;
+    }
+
+    .trip-day, .trip-month {
+        margin-right: 5px;
+    }
+
+    .trip-time {
+        margin-left: auto;
+    }
+
+    .trip-info {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .trip-view-icon {
+        margin-left: 0;
+        margin-top: 5px;
+        align-self: flex-end;
+    }
+
+    .pagination-container {
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .pagination-controls {
+        width: auto;
+        justify-content: center;
+    }
+
+    .route-filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .route-filters .dropdown {
+        width: 100%;
+    }
+
+    .route-filters .dropdown-toggle {
+        width: 100%;
+        text-align: left;
+    }
+}
+</style>
 {% endblock %}

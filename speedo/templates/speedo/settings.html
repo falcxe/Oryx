@@ -1,5 +1,402 @@
 {% extends 'speedo/base.html' %}
+
+{% block header_extras %}
+<div class="header-controls">
+    <button id="save-settings-btn" class="btn btn-primary">
+        <i class="fas fa-save me-2"></i>Сохранить
+    </button>
+</div>
+{% endblock %}
+
 {% block content %}
-<div class="page-title">Настройки</div>
-<div class="empty-state">Настройки профиля и устройства появятся здесь.</div>
+<div class="dashboard-container">
+    <div class="settings-wrapper">
+        <h3 class="settings-section-title">Настройки устройства</h3>
+
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <h4 class="settings-card-title">Настройки отображения</h4>
+                <span class="settings-card-desc">Настройки пользовательского интерфейса</span>
+            </div>
+
+            <div class="settings-form-group">
+                <label>Единицы измерения</label>
+                <div class="radio-group">
+                    <div class="form-check radio-circle">
+                        <input class="form-check-input" type="radio" name="units" id="units-km" checked>
+                        <label class="form-check-label" for="units-km">Километры</label>
+                    </div>
+                    <div class="form-check radio-circle">
+                        <input class="form-check-input" type="radio" name="units" id="units-miles">
+                        <label class="form-check-label" for="units-miles">Мили</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-form-group">
+                <label for="theme-select">Тема интерфейса</label>
+                <select id="theme-select" class="form-select">
+                    <option value="dark" selected>Темная</option>
+                    <option value="light">Светлая</option>
+                    <option value="auto">Системная</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <h4 class="settings-card-title">Параметры соединения</h4>
+                <span class="settings-card-desc">Настройки подключения и передачи данных</span>
+            </div>
+
+            <div class="settings-form-group">
+                <label for="device-id">ID устройства</label>
+                <input type="text" id="device-id" class="form-control" value="ESP32-001" readonly>
+                <small class="form-text text-muted">Уникальный идентификатор вашего устройства</small>
+            </div>
+
+            <div class="settings-form-group">
+                <label for="update-interval">Интервал обновления</label>
+                <div class="input-group">
+                    <select id="update-interval" class="form-select">
+                        <option value="1">1</option>
+                        <option value="5" selected>5</option>
+                        <option value="10">10</option>
+                        <option value="30">30</option>
+                        <option value="60">60</option>
+                    </select>
+                    <span class="input-group-text">сек</span>
+                </div>
+                <small class="form-text text-muted">Как часто устройство будет отправлять данные</small>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <h4 class="settings-card-title">Настройки пользователя</h4>
+                <span class="settings-card-desc">Персональные данные для расчета калорий</span>
+            </div>
+
+            <div class="settings-form-group">
+                <label for="user-weight">Вес</label>
+                <div class="input-group">
+                    <input type="number" id="user-weight" class="form-control" value="75">
+                    <span class="input-group-text">кг</span>
+                </div>
+            </div>
+
+            <div class="settings-form-group">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="notifications-toggle" checked>
+                    <label class="form-check-label" for="notifications-toggle">Уведомления</label>
+                </div>
+                <small class="form-text text-muted">Получать уведомления о новых поездках</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.settings-section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #f5f5f5;
+}
+
+.settings-card {
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid #2a2a2a;
+}
+
+.settings-card-header {
+    margin-bottom: 25px;
+}
+
+.settings-card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #f5f5f5;
+}
+
+.settings-card-desc {
+    font-size: 0.9rem;
+    color: #a0a0a0;
+}
+
+.settings-form-group {
+    margin-bottom: 20px;
+}
+
+.settings-form-group:last-child {
+    margin-bottom: 0;
+}
+
+.settings-form-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #e0e0e0;
+}
+
+.form-control, .form-select {
+    background-color: #252525;
+    border: 1px solid #333;
+    color: #e0e0e0;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #252525;
+    border-color: #7c4dff;
+    box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.15);
+    color: #e0e0e0;
+}
+
+input[readonly].form-control {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.input-group-text {
+    background-color: #333;
+    border: 1px solid #333;
+    color: #a0a0a0;
+}
+
+.form-text {
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.radio-group {
+    display: flex;
+    gap: 20px;
+}
+
+.form-check-input {
+    background-color: #333;
+    border-color: #444;
+}
+
+.form-check-input:checked {
+    background-color: #7c4dff;
+    border-color: #7c4dff;
+}
+
+.form-check-label {
+    color: #e0e0e0;
+}
+
+.radio-circle .form-check-input {
+    width: 20px;
+    height: 20px;
+    margin-top: 0.25rem;
+    border-radius: 50%;
+}
+
+.form-switch .form-check-input {
+    width: 45px;
+    height: 24px;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #7c4dff;
+    border-color: #7c4dff;
+}
+
+/* Стиль для активного пункта меню Настройки */
+:root {
+    --settings-color: #7c4dff;
+}
+
+.nav-link[href="/settings/"].active {
+    background-color: rgba(124, 77, 255, 0.15);
+    color: #7c4dff !important;
+}
+
+.nav-link[href="/settings/"].active i {
+    color: #7c4dff !important;
+}
+
+#save-settings-btn {
+    background-color: #7c4dff;
+    border-color: #7c4dff;
+    padding: 8px 20px;
+    font-weight: 500;
+}
+
+#save-settings-btn:hover {
+    background-color: #6a3de9;
+    border-color: #6a3de9;
+}
+
+@media (max-width: 768px) {
+    .settings-card {
+        padding: 20px;
+    }
+
+    .radio-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Загрузка сохраненных настроек (если есть)
+    loadSettings();
+
+    // Обработчик для кнопки сохранения
+    document.getElementById('save-settings-btn').addEventListener('click', function() {
+        saveSettings();
+
+        // Показываем сообщение об успешном сохранении
+        showToast('Настройки успешно сохранены');
+    });
+});
+
+function loadSettings() {
+    // Пример загрузки настроек из localStorage
+    try {
+        const savedSettings = JSON.parse(localStorage.getItem('oryx_settings'));
+        if (savedSettings) {
+            // Единицы измерения (км или мили)
+            if (savedSettings.units === 'miles') {
+                document.getElementById('units-miles').checked = true;
+            } else {
+                document.getElementById('units-km').checked = true;
+            }
+
+            // Выбор темы
+            document.getElementById('theme-select').value = savedSettings.theme || 'dark';
+
+            // Интервал обновления
+            const updateInterval = document.getElementById('update-interval');
+            if (savedSettings.updateInterval) {
+                // Проверяем, есть ли такое значение в списке
+                const options = Array.from(updateInterval.options).map(opt => parseInt(opt.value));
+                if (options.includes(savedSettings.updateInterval)) {
+                    updateInterval.value = savedSettings.updateInterval;
+                } else {
+                    updateInterval.value = 5; // По умолчанию
+                }
+            }
+
+            // Вес пользователя
+            document.getElementById('user-weight').value = savedSettings.userWeight || 75;
+
+            // Переключатель уведомлений
+            document.getElementById('notifications-toggle').checked =
+                savedSettings.notifications !== undefined ? savedSettings.notifications : true;
+        }
+    } catch (err) {
+        console.error('Ошибка при загрузке настроек:', err);
+    }
+}
+
+function saveSettings() {
+    // Сбор настроек из формы
+    const settings = {
+        deviceId: document.getElementById('device-id').value,
+        updateInterval: parseInt(document.getElementById('update-interval').value),
+        units: document.getElementById('units-miles').checked ? 'miles' : 'km',
+        theme: document.getElementById('theme-select').value,
+        userWeight: parseInt(document.getElementById('user-weight').value),
+        notifications: document.getElementById('notifications-toggle').checked
+    };
+
+    // Сохранение в localStorage
+    try {
+        localStorage.setItem('oryx_settings', JSON.stringify(settings));
+    } catch (err) {
+        console.error('Ошибка при сохранении настроек:', err);
+    }
+}
+
+function showToast(message) {
+    // Создание и отображение всплывающего уведомления
+    const toast = document.createElement('div');
+    toast.className = 'settings-toast';
+    toast.innerHTML = `
+        <div class="settings-toast-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="settings-toast-message">${message}</div>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Анимация появления
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+
+    // Автоматическое скрытие через 3 секунды
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Добавляем стили для toast-уведомлений
+const toastStyle = document.createElement('style');
+toastStyle.textContent = `
+.settings-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    background-color: #1a1a1a;
+    border-left: 4px solid #7c4dff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transform: translateY(30px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.settings-toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.settings-toast-icon {
+    margin-right: 15px;
+    font-size: 1.2rem;
+    color: #7c4dff;
+}
+
+.settings-toast-message {
+    color: #e0e0e0;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    .settings-toast {
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+    }
+}
+`;
+document.head.appendChild(toastStyle);
+</script>
 {% endblock %}
