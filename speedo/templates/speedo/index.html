@@ -1,0 +1,188 @@
+{% extends 'speedo/base.html' %}
+{% load static %}
+
+{% block title %}Oryx Smart Speedometer - умный велосипедный компьютер{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 5rem 0;
+        margin-bottom: 3rem;
+    }
+    .hero-image {
+        max-width: 100%;
+        border-radius: 1rem;
+        box-shadow: 0 1rem 3rem rgba(0,0,0,0.3);
+    }
+    .feature-icon {
+        font-size: 2.5rem;
+        color: #007bff;
+        margin-bottom: 1rem;
+    }
+    .feature-card {
+        border: none;
+        border-radius: 1rem;
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+        height: 100%;
+        transition: transform 0.3s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    .cta-section {
+        background-color: #f8f9fa;
+        padding: 4rem 0;
+        margin-top: 3rem;
+        border-radius: 1rem;
+    }
+    .btn-cta {
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h1 class="display-4 fw-bold mb-3">Умный велосипедный спидометр Oryx</h1>
+                <p class="lead mb-4">Превратите ваш велосипед в современный электронный комплекс. Отслеживайте скорость, маршрут, пройденное расстояние и многое другое на нашей веб-платформе.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'register' %}" class="btn btn-light btn-lg">Регистрация</a>
+                    <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Вход</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <img src="{% static 'img/speedometer.jpg' %}" alt="Умный велосипедный спидометр" class="hero-image" onerror="this.src='https://via.placeholder.com/600x400?text=Умный+велосипедный+спидометр'">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="container mb-5">
+    <h2 class="text-center mb-5">Возможности устройства</h2>
+    
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card feature-card p-4">
+                <div class="text-center feature-icon">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="card-title">Точное измерение скорости</h4>
+                    <p class="card-text">Датчик Холла обеспечивает высокоточное измерение скорости движения и пройденного расстояния.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card p-4">
+                <div class="text-center feature-icon">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="card-title">GPS-трекинг</h4>
+                    <p class="card-text">Встроенный GPS-модуль позволяет отслеживать ваши маршруты и записывать их для последующего анализа.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card p-4">
+                <div class="text-center feature-icon">
+                    <i class="fas fa-wifi"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="card-title">Беспроводная синхронизация</h4>
+                    <p class="card-text">Подключение к WiFi позволяет автоматически синхронизировать данные с вашим личным кабинетом.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card p-4">
+                <div class="text-center feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="card-title">Статистика и аналитика</h4>
+                    <p class="card-text">Анализируйте данные о ваших поездках, средней скорости и пройденном расстоянии на удобной панели управления.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card p-4">
+                <div class="text-center feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="card-title">Удобный веб-доступ</h4>
+                    <p class="card-text">Просматривайте данные с любого устройства через веб-браузер без необходимости устанавливать приложение.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card feature-card p-4">
+                <div class="text-center feature-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="card-title">Безопасность</h4>
+                    <p class="card-text">Ваши данные надежно защищены и доступны только вам через безопасный протокол HTTPS.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="container mb-5">
+    <h2 class="text-center mb-5">Как это работает</h2>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-primary text-white rounded-circle p-3 me-3">1</div>
+                        <h4 class="mb-0">Зарегистрируйтесь на платформе</h4>
+                    </div>
+                    <p class="ms-5 ps-2 mb-4">Создайте аккаунт на нашем веб-сайте всего за несколько минут.</p>
+                    
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-primary text-white rounded-circle p-3 me-3">2</div>
+                        <h4 class="mb-0">Подключите ваш спидометр</h4>
+                    </div>
+                    <p class="ms-5 ps-2 mb-4">Переведите устройство в режим сопряжения и следуйте инструкциям в личном кабинете для подключения.</p>
+                    
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-primary text-white rounded-circle p-3 me-3">3</div>
+                        <h4 class="mb-0">Начните пользоваться</h4>
+                    </div>
+                    <p class="ms-5 ps-2">Установите спидометр на ваш велосипед, включите его, и все данные будут автоматически синхронизироваться с вашим аккаунтом.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container text-center">
+        <h2 class="mb-4">Готовы начать?</h2>
+        <p class="lead mb-4">Зарегистрируйтесь сейчас и подключите ваш умный спидометр Oryx</p>
+        <div class="d-flex justify-content-center gap-3">
+            <a href="{% url 'register' %}" class="btn btn-primary btn-cta">Зарегистрироваться</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-cta">Войти в систему</a>
+        </div>
+    </div>
+</section>
+{% endblock %} 

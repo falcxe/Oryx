@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm
 import json
 from .models import SpeedometerData, DeviceRegistration, PairingCode
 from django.utils import timezone
@@ -113,19 +116,33 @@ def get_latest_data(request):
             'message': f'Ошибка при получении данных: {str(e)}'
         }, status=500)
 
+@login_required
 def dashboard(request):
+    """Дашборд для отображения данных с устройства"""
+    # Проверяем, есть ли у пользователя устройства
+    devices = DeviceRegistration.objects.filter(user=request.user)
+    
+    if not devices.exists():
+        # Если устройств нет, предлагаем добавить устройство
+        messages.info(request, 'У вас пока нет добавленных устройств. Пожалуйста, добавьте устройство, чтобы начать работу.')
+        return redirect('device_list')
+    
     last_data = SpeedometerData.objects.last()
-    return render(request, 'speedo/dashboard.html', {'data': last_data})
+    return render(request, 'speedo/dashboard.html', {'data': last_data, 'devices': devices})
 
+@login_required
 def routes(request):
     return render(request, 'speedo/routes.html')
 
+@login_required
 def history(request):
     return render(request, 'speedo/history.html')
 
+@login_required
 def settings(request):
     return render(request, 'speedo/settings.html')
 
+@login_required
 def sensors(request):
     """Страница с графиками показаний датчиков"""
     return render(request, 'speedo/sensors.html')
@@ -440,3 +457,82 @@ def api_auth(request):
         'success': False,
         'message': 'Метод не поддерживается'
     }, status=405)
+
+# Новые представления для аутентификации и главной страницы
+
+def home(request):
+    """Главная страница для неавторизованных пользователей"""
+    # Если пользователь уже авторизован, перенаправляем на дашборд
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    # Показываем страницу с описанием продукта и ссылками на регистрацию/вход
+    return render(request, 'speedo/index.html')
+
+def login_view(request):
+    """Страница входа в систему"""
+    # Если пользователь уже авторизован, перенаправляем на дашборд
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            # Перенаправляем на дашборд после успешного входа
+            return redirect('dashboard')
+        else:
+            # Если аутентификация не удалась, показываем сообщение об ошибке
+            messages.error(request, 'Неверное имя пользователя или пароль')
+    
+    return render(request, 'speedo/login.html')
+
+def register_view(request):
+    """Страница регистрации нового пользователя"""
+    # Если пользователь уже авторизован, перенаправляем на дашборд
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+        
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        # Проверка совпадения паролей
+        if password1 != password2:
+            messages.error(request, 'Пароли не совпадают')
+            return redirect('register')
+        
+        # Проверка уникальности имени пользователя
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Пользователь с таким именем уже существует')
+            return redirect('register')
+        
+        # Проверка уникальности email
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Пользователь с таким email уже существует')
+            return redirect('register')
+        
+        # Проверка сложности пароля
+        if len(password1) < 8:
+            messages.error(request, 'Пароль должен содержать не менее 8 символов')
+            return redirect('register')
+        
+        # Создаем нового пользователя
+        try:
+            user = User.objects.create_user(username=username, email=email, password=password1)
+            
+            # Автоматически входим в систему
+            login(request, user)
+            
+            # Перенаправляем на дашборд
+            return redirect('dashboard')
+        except Exception as e:
+            messages.error(request, f'Ошибка при создании пользователя: {str(e)}')
+    
+    return render(request, 'speedo/register.html')

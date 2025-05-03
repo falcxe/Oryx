@@ -1819,99 +1819,63 @@ bool checkPairingStatus() {
   return false;
 }
 
-// Отображение экрана сопряжения с подробными инструкциями
+// Display the pairing screen (simplified version)
 void displayPairingScreen() {
   u8g2.clearBuffer();
   
-  // Анимируем точки ожидания для LED и определяем состояние
+  // Animate RGB LED
   static unsigned long lastAnimTime = 0;
   static int animState = 0;
-  static int screenState = 0; // Для переключения между экранами инструкций
   
-  if (millis() - lastAnimTime > 400) {  // Скорость анимации
-    animState = (animState + 1) % 4;    // 4 состояния анимации
+  if (millis() - lastAnimTime > 400) {  // Animation speed
+    animState = (animState + 1) % 4;    // 4 animation states
     lastAnimTime = millis();
     
-    // Анимируем RGB светодиод
+    // Animate RGB LED
     switch (animState) {
       case 0: 
-        setRGBColor(64, 0, 0); // Красный
+        setRGBColor(64, 0, 0); // Red
         break;
       case 1: 
-        setRGBColor(0, 64, 0); // Зеленый
+        setRGBColor(0, 64, 0); // Green
         break;
       case 2: 
-        setRGBColor(0, 0, 64); // Синий
+        setRGBColor(0, 0, 64); // Blue
         break;
       case 3: 
-        setRGBColor(0, 0, 0);  // Выключено
+        setRGBColor(0, 0, 0);  // Off
         break;
     }
-    
-    // Каждые 3 секунды меняем экран инструкций
-    if (animState == 0 && millis() % 3000 < 400) {
-      screenState = (screenState + 1) % 3;
-    }
   }
   
-  // Заголовок по центру для текущего экрана
+  // Title centered
   u8g2.setFont(u8g2_font_profont17_tr);
-  char* titleStr;
-  
-  switch (screenState) {
-    case 0:
-      titleStr = "КОД СОПРЯЖЕНИЯ";
-      break;
-    case 1:
-      titleStr = "ШАГ 1";
-      break;
-    case 2:
-      titleStr = "ШАГ 2";
-      break;
-  }
-  
+  char titleStr[] = "PAIRING CODE";
   int titleWidth = u8g2.getStrWidth(titleStr);
-  u8g2.drawStr((128-titleWidth)/2, 15, titleStr);
+  u8g2.drawStr((128-titleWidth)/2, 16, titleStr);
   
-  // Разделительная линия
-  u8g2.drawHLine(0, 18, 128);
+  // Divider line
+  u8g2.drawHLine(0, 20, 128);
   
-  // Содержимое экрана в зависимости от текущего состояния
-  if (screenState == 0) {
-    // Экран с кодом
-    if (pairingCode.length() > 0) {
-      u8g2.setFont(u8g2_font_profont22_tn); // Большой шрифт для кода
-      int codeWidth = u8g2.getStrWidth(pairingCode.c_str());
-      u8g2.drawStr((128-codeWidth)/2, 38, pairingCode.c_str());
-    } else {
-      u8g2.setFont(u8g2_font_profont12_tr);
-      char genStr[] = "Генерация кода...";
-      int genWidth = u8g2.getStrWidth(genStr);
-      u8g2.drawStr((128-genWidth)/2, 38, genStr);
-    }
-    
-    // Показываем URL сайта
-    u8g2.setFont(u8g2_font_profont10_tr);
-    char urlStr[] = "oryx-optj.onrender.com";
-    int urlWidth = u8g2.getStrWidth(urlStr);
-    u8g2.drawStr((128-urlWidth)/2, 52, urlStr);
-  }
-  else if (screenState == 1) {
-    // Экран с инструкцией 1
-    u8g2.setFont(u8g2_font_profont10_tr);
-    u8g2.drawStr(5, 30, "1. Зарегистрируйтесь");
-    u8g2.drawStr(5, 42, "на сайте");
-    u8g2.drawStr(5, 54, "oryx-optj.onrender.com");
-  }
-  else if (screenState == 2) {
-    // Экран с инструкцией 2
-    u8g2.setFont(u8g2_font_profont10_tr);
-    u8g2.drawStr(5, 30, "2. Войдите в аккаунт");
-    u8g2.drawStr(5, 42, "3. В профиле введите");
-    u8g2.drawStr(5, 54, "код сопряжения");
+  // Display code in large font
+  if (pairingCode.length() > 0) {
+    u8g2.setFont(u8g2_font_profont22_tn); // Large font for code
+    int codeWidth = u8g2.getStrWidth(pairingCode.c_str());
+    u8g2.drawStr((128-codeWidth)/2, 40, pairingCode.c_str());
+  } else {
+    u8g2.setFont(u8g2_font_profont12_tr);
+    char genStr[] = "Generating...";
+    int genWidth = u8g2.getStrWidth(genStr);
+    u8g2.drawStr((128-genWidth)/2, 40, genStr);
   }
   
-  // Отображаем время до конца сопряжения
+  // Show website URL
+  u8g2.setFont(u8g2_font_profont10_tr);
+  char urlStr[] = "oryx-optj.onrender.com";
+  int urlWidth = u8g2.getStrWidth(urlStr);
+  u8g2.drawStr((128-urlWidth)/2, 52, urlStr);
+  
+  // Display time left
   unsigned long elapsedTime = millis() - pairingStartTime;
   unsigned long remainingTime = (elapsedTime < 300000) ? (300000 - elapsedTime) / 1000 : 0;
   
@@ -1920,7 +1884,7 @@ void displayPairingScreen() {
   
   u8g2.setFont(u8g2_font_profont10_tr);
   char timeStr[30];
-  sprintf(timeStr, "Осталось: %s", timeBuf);
+  sprintf(timeStr, "Time left: %s", timeBuf);
   int timeWidth = u8g2.getStrWidth(timeStr);
   u8g2.drawStr((128-timeWidth)/2, 63, timeStr);
   
