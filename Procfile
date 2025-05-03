@@ -1,0 +1,1 @@
+web: gunicorn oryx_smart_speedometer.wsgi --log-file - 

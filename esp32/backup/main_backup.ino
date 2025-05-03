@@ -9,12 +9,6 @@
 #include <Preferences.h>
 #include <WebServer.h>
 #include <DNSServer.h>
-#include <math.h>
-
-// Определяем PI, если она не определена
-#ifndef PI
-#define PI 3.14159265358979323846
-#endif
 
 // WiFi и сервер настройки
 #define WIFI_SSID "YOUR_WIFI_SSID"      // Имя вашей WiFi сети
@@ -37,13 +31,10 @@
 #define API_PAIR "pair/"                 // Запрос на сопряжение
 #define API_RECEIVE "receive/"           // Отправка данных
 #define API_SETTINGS "settings/"         // Получение настроек
+#define API_PAIR_CONFIRM "pair/confirm"   // Подтверждение сопряжения
 
 // Стационарный адрес сервера (без возможности редактирования пользователем)
-#define SERVER_URL "http://bike.your-domain.com"  // URL вашего сервера
-#define API_PAIR "/api/pair"                      // Эндпоинт для сопряжения
-#define API_AUTH "/api/auth"                      // Эндпоинт для авторизации
-#define API_DATA "/api/data"                      // Эндпоинт для отправки данных
-#define API_SETTINGS "/api/settings"              // Эндпоинт для получения настроек
+#define SERVER_URL "http://192.168.1.100:8000/api/"
 
 // Pin definitions
 #define OLED_SDA 21
@@ -149,148 +140,119 @@ unsigned long pairingStartTime = 0;
 #define INDICATOR_ERROR 3       // Ошибка соединения
 #define INDICATOR_SUCCESS 4     // Успешное соединение/операция
 #define INDICATOR_WARNING 5     // Предупреждение
-#define INDICATOR_CHECKING 6    // Проверка соединения с сервером
 
 // Переменные для управления индикацией
 int indicatorMode = INDICATOR_NONE;
 unsigned long indicatorStartTime = 0;
 unsigned long indicatorDuration = 0;
-bool previousRGBEffectState = false;  // Для сохранения предыдущего состояния RGB эффекта
-
-// Для хранения текущих значений RGB компонентов
-byte currentRed = 0;
-byte currentGreen = RGB_DEFAULT_BRIGHTNESS;
-byte currentBlue = 0;
 
 // Функция для установки режима индикатора
 void setIndicator(int mode, unsigned long duration) {
-  // Сохраняем предыдущее состояние RGB эффекта
-  previousRGBEffectState = isRGBEffect;
-  
   indicatorMode = mode;
   indicatorStartTime = millis();
   indicatorDuration = duration;
 }
 
-// Обновление RGB эффекта
+// Функция для обновления RGB-индикатора с учетом текущего режима
 void updateRGBEffect() {
-  // Если нет активного эффекта и нет активного индикатора - выходим
-  if (!isRGBEffect && indicatorMode == INDICATOR_NONE) {
-    return;
-  }
-  
-  // Если активен режим индикации, обрабатываем его
-  if (indicatorMode != INDICATOR_NONE) {
-    unsigned long elapsedTime = millis() - indicatorStartTime;
+  // Если активен эффект радуги
+  if (isRGBEffect) {
+    unsigned long elapsedTime = millis() - rgbEffectStartTime;
     
-    // Проверяем, не истекло ли время индикации
-    if (elapsedTime >= indicatorDuration) {
-      // Сбрасываем режим индикации
-      indicatorMode = INDICATOR_NONE;
-      
-      // Восстанавливаем нормальное отображение
-      isRGBEffect = previousRGBEffectState;
-      updateLEDColor();
+    // Run effect for 1 second max
+    if (elapsedTime > 1000) {
+      isRGBEffect = false;
       return;
     }
     
-    // Переменные для вычисления яркости
-    int brightness;
+    int phase = (elapsedTime / 100) % 6;
     
-    // Эффекты в зависимости от режима индикации
+    switch (phase) {
+      case 0: setRGBColor(RGB_DEFAULT_BRIGHTNESS, 0, 0); break;     // Red
+      case 1: setRGBColor(RGB_DEFAULT_BRIGHTNESS, RGB_DEFAULT_BRIGHTNESS, 0); break;     // Yellow
+      case 2: setRGBColor(0, RGB_DEFAULT_BRIGHTNESS, 0); break;     // Green
+      case 3: setRGBColor(0, RGB_DEFAULT_BRIGHTNESS, RGB_DEFAULT_BRIGHTNESS); break;     // Cyan
+      case 4: setRGBColor(0, 0, RGB_DEFAULT_BRIGHTNESS); break;     // Blue
+      case 5: setRGBColor(RGB_DEFAULT_BRIGHTNESS, 0, RGB_DEFAULT_BRIGHTNESS); break;     // Magenta
+    }
+    return;
+  }
+
+  // Проверяем активный режим индикации
+  if (indicatorMode != INDICATOR_NONE) {
+    // Если время индикации истекло, сбрасываем режим
+    if (millis() - indicatorStartTime > indicatorDuration) {
+      indicatorMode = INDICATOR_NONE;
+      return;
+    }
+    
+    // Выбираем эффект в зависимости от режима индикации
     switch (indicatorMode) {
-      case INDICATOR_ERROR:
-        // Красное мигание (2 Гц)
-        if ((elapsedTime / 250) % 2 == 0) {
-          analogWrite(RGB_R, 255);
-          analogWrite(RGB_G, 0);
-          analogWrite(RGB_B, 0);
-        } else {
-          analogWrite(RGB_R, 0);
-          analogWrite(RGB_G, 0);
-          analogWrite(RGB_B, 0);
-        }
-        break;
-        
-      case INDICATOR_WARNING:
-        // Оранжевое мигание (1 Гц)
-        if ((elapsedTime / 500) % 2 == 0) {
-          analogWrite(RGB_R, 255);
-          analogWrite(RGB_G, 100);
-          analogWrite(RGB_B, 0);
-        } else {
-          analogWrite(RGB_R, 0);
-          analogWrite(RGB_G, 0);
-          analogWrite(RGB_B, 0);
-        }
-        break;
-        
       case INDICATOR_SENDING:
-        // Синее медленное мигание (0.5 Гц)
-        if ((elapsedTime / 1000) % 2 == 0) {
-          analogWrite(RGB_R, 0);
-          analogWrite(RGB_G, 0);
-          analogWrite(RGB_B, 255);
-        } else {
-          analogWrite(RGB_R, 0);
-          analogWrite(RGB_G, 0);
-          analogWrite(RGB_B, 64);
+        // Пульсирующий синий - отправка данных
+        {
+          int pulsePeriod = 500; // 500 мс на полный цикл пульсации
+          int pulsePhase = (millis() - indicatorStartTime) % pulsePeriod;
+          if (pulsePhase < pulsePeriod / 2) {
+            setRGBColor(0, 0, RGB_DEFAULT_BRIGHTNESS); // Синий - включен
+          } else {
+            setRGBColor(0, 0, 0); // Выключен
+          }
         }
         break;
         
       case INDICATOR_RECEIVING:
-        // Фиолетовое медленное мигание (0.5 Гц)
-        if ((elapsedTime / 1000) % 2 == 0) {
-          analogWrite(RGB_R, 200);
-          analogWrite(RGB_G, 0);
-          analogWrite(RGB_B, 255);
-        } else {
-          analogWrite(RGB_R, 64);
-          analogWrite(RGB_G, 0);
-          analogWrite(RGB_B, 64);
+        // Пульсирующий зеленый - получение данных
+        {
+          int pulsePeriod = 500; // 500 мс на полный цикл пульсации
+          int pulsePhase = (millis() - indicatorStartTime) % pulsePeriod;
+          if (pulsePhase < pulsePeriod / 2) {
+            setRGBColor(0, RGB_DEFAULT_BRIGHTNESS, 0); // Зеленый - включен
+          } else {
+            setRGBColor(0, 0, 0); // Выключен
+          }
+        }
+        break;
+        
+      case INDICATOR_ERROR:
+        // Быстрое мигание красным - ошибка
+        {
+          int errorPeriod = 200; // 200 мс на полный цикл мигания
+          int errorPhase = (millis() - indicatorStartTime) % errorPeriod;
+          if (errorPhase < errorPeriod / 2) {
+            setRGBColor(RGB_DEFAULT_BRIGHTNESS, 0, 0); // Красный - включен
+          } else {
+            setRGBColor(0, 0, 0); // Выключен
+          }
         }
         break;
         
       case INDICATOR_SUCCESS:
-        // Зеленая вспышка (затухание)
-        brightness = 255 - (elapsedTime * 255 / indicatorDuration);
-        analogWrite(RGB_R, 0);
-        analogWrite(RGB_G, brightness);
-        analogWrite(RGB_B, 0);
+        // Постоянный зеленый с коротким затемнением - успех
+        {
+          int successPeriod = 1000; // 1000 мс на полный цикл
+          int successPhase = (millis() - indicatorStartTime) % successPeriod;
+          if (successPhase < 900) { // 900 мс светится
+            setRGBColor(0, RGB_DEFAULT_BRIGHTNESS, 0); // Зеленый - включен
+          } else {
+            setRGBColor(0, 0, 0); // Выключен на 100 мс
+          }
+        }
         break;
         
-      case INDICATOR_CHECKING:
-        // Бирюзовое мигание (1.5 Гц)
-        if ((elapsedTime / 333) % 2 == 0) {
-          analogWrite(RGB_R, 0);
-          analogWrite(RGB_G, 200);
-          analogWrite(RGB_B, 200);
-        } else {
-          analogWrite(RGB_R, 0);
-          analogWrite(RGB_G, 50);
-          analogWrite(RGB_B, 100);
+      case INDICATOR_WARNING:
+        // Пульсирующий желтый - предупреждение
+        {
+          int warningPeriod = 1000; // 1000 мс на полный цикл пульсации
+          int warningPhase = (millis() - indicatorStartTime) % warningPeriod;
+          if (warningPhase < warningPeriod / 2) {
+            setRGBColor(RGB_DEFAULT_BRIGHTNESS, RGB_DEFAULT_BRIGHTNESS, 0); // Желтый - включен
+          } else {
+            setRGBColor(0, 0, 0); // Выключен
+          }
         }
         break;
     }
-    
-    return;
-  }
-  
-  // Обработка обычного RGB эффекта (пульсация, радуга и т.д.)
-  unsigned long timeFromStart = millis() - rgbEffectStartTime;
-  
-  // Плавная пульсация (цикл 2 секунды)
-  int brightness = (sin(timeFromStart * PI / 1000) + 1) * 127;
-  
-  // Используем текущий цвет с пульсирующей яркостью
-  analogWrite(RGB_R, (currentRed * brightness) / 255);
-  analogWrite(RGB_G, (currentGreen * brightness) / 255);
-  analogWrite(RGB_B, (currentBlue * brightness) / 255);
-  
-  // Проверяем, не истекло ли время эффекта (10 секунд)
-  if (timeFromStart > 10000) {
-    isRGBEffect = false;
-    updateLEDColor(); // Восстанавливаем обычный цвет
   }
 }
 
@@ -478,11 +440,6 @@ void IRAM_ATTR hallSensorISR() {
 
 // Обычная установка цвета светодиода (для прямого управления пинами)
 void setRGBColor(byte r, byte g, byte b) {
-  // Сохраняем текущие значения RGB
-  currentRed = r;
-  currentGreen = g;
-  currentBlue = b;
-  
   // Используем analogWrite вместо специфичных ESP32 функций
   analogWrite(RGB_R, r);
   analogWrite(RGB_G, g);
@@ -599,9 +556,6 @@ void setup() {
   // Включаем устройство
   isPowerOn = true;
   
-  // Запускаем проверку всех систем
-  runSystemDiagnostics();
-  
   Serial.println("Инициализация завершена");
 }
 
@@ -633,99 +587,64 @@ void loop() {
     return;
   }
   
-  // В режиме точки доступа обрабатываем DNS и веб-запросы
-  if (deviceMode == MODE_AP_SETUP) {
-    dnsServer.processNextRequest();
-    webServer.handleClient();
-    
-    // Отображаем экран настройки
-    displayAPScreen();
-    
-    // Проверяем таймаут режима AP
-    if (millis() - apStartTime > AP_TIMEOUT) {
-      Serial.println("Таймаут режима AP. Возврат к нормальному режиму.");
-      exitAPMode();
-    }
-    
-    // Обрабатываем RGB индикацию
-    handleAPModeIndication();
-    
-    delay(10);
-    return;
-  }
-  
-  // Обновляем RGB эффекты вместо программного PWM
-  if (isRGBEffect || indicatorMode != INDICATOR_NONE) {
-    updateRGBEffect();
-  } else {
-    updateLEDColor();
-  }
-  
-  // Периодическая проверка состояния WiFi-подключения
-  static unsigned long lastWiFiCheckTime = 0;
-  if (deviceMode == MODE_NORMAL && millis() - lastWiFiCheckTime > 30000) { // каждые 30 секунд
-    lastWiFiCheckTime = millis();
-    
-    // Проверяем статус WiFi-соединения
-    if (WiFi.status() != WL_CONNECTED && wifiConnected) {
-      Serial.println("Обнаружена потеря WiFi-соединения. Попытка переподключения...");
-      wifiConnected = connectToSavedWiFi();
-      
-      if (wifiConnected) {
-        Serial.println("Соединение с WiFi восстановлено");
-      } else {
-        Serial.println("Не удалось восстановить соединение с WiFi");
-      }
-    }
-  }
-  
-  // Обработка в зависимости от режима
+  // Обработка в зависимости от режима устройства
   switch (deviceMode) {
     case MODE_AP_SETUP:
-      // Обработка DNS запросов
+      // В режиме точки доступа обрабатываем DNS и веб-запросы
       dnsServer.processNextRequest();
-      // Обработка веб-сервера
       webServer.handleClient();
-  
+      
       // Отображаем экран настройки
-      displaySetupScreen();
+      displayAPScreen();
       
-      // Проверяем, не истекло ли время режима AP
+      // Проверяем таймаут режима AP
       if (millis() - apStartTime > AP_TIMEOUT) {
-        // Если время истекло, переходим в обычный режим
-        webServer.stop();
-        dnsServer.stop();
-        deviceMode = MODE_NORMAL;
-        
-        // Пытаемся подключиться к WiFi с настройками по умолчанию
-        wifiConnected = connectToWiFi();
+        Serial.println("Таймаут режима AP. Возврат к нормальному режиму.");
+        exitAPMode();
       }
+      
+      // Обрабатываем RGB индикацию
+      handleAPModeIndication();
       break;
-      
+    
     case MODE_PAIRING:
-      // Если активен режим сопряжения, отображаем соответствующий экран
+      // В режиме сопряжения отображаем экран с кодом и проверяем статус сопряжения
       displayPairingScreen();
-  
-      // Периодически проверяем статус сопряжения
-      static unsigned long lastPairingCheckTime = 0;
-      if (millis() - lastPairingCheckTime > 5000) {
-        checkPairingStatus();
-        lastPairingCheckTime = millis();
+      
+      // Проверяем успешность сопряжения каждые 5 секунд
+      static unsigned long lastPairingCheck = 0;
+      if (millis() - lastPairingCheck > 5000) {
+        if (checkPairingStatus()) {
+          // Если сопряжение успешно - переходим в обычный режим
+          tone(BUZZER_PIN, 2000, 100);
+          delay(100);
+          tone(BUZZER_PIN, 2500, 100);
+          deviceMode = MODE_NORMAL;
+        }
+        lastPairingCheck = millis();
       }
       
-      // Проверяем, не истекло ли время сопряжения
+      // Проверяем таймаут режима сопряжения (5 минут)
       if (millis() - pairingStartTime > 300000) {
+        Serial.println("Таймаут режима сопряжения. Возврат к нормальному режиму.");
         pairingMode = false;
         deviceMode = MODE_NORMAL;
-        tone(BUZZER_PIN, 500, 500); // Сигнал об окончании времени сопряжения
+        tone(BUZZER_PIN, 500, 300); // Звуковой сигнал таймаута
+      }
+      
+      // RGB-индикация режима сопряжения - мигающий синий
+      if (millis() % 1000 < 500) {
+        setRGBColor(0, 0, RGB_DEFAULT_BRIGHTNESS);
+      } else {
+        setRGBColor(0, 0, 0);
       }
       break;
       
     case MODE_NORMAL:
     default:
       // Проверка статуса переключателей
-  checkSwitches();
-  
+      checkSwitches();
+      
       if (isPowerOn) {
         // Стандартное поведение
         // Проверка длительного нажатия
@@ -892,7 +811,7 @@ void updateSpeed() {
 }
 
 void displayWelcomeScreen() {
-  u8g2.clearBuffer();
+      u8g2.clearBuffer();
   
   // Логотип
   u8g2.setFont(u8g2_font_profont17_tr); // Меньший моноширинный шрифт
@@ -905,7 +824,7 @@ void displayWelcomeScreen() {
   u8g2.setFont(u8g2_font_profont10_tr); // Меньший моноширинный шрифт
   u8g2.drawStr(50, 62, "v1.1");
   
-  u8g2.sendBuffer();
+      u8g2.sendBuffer();
 }
 
 void displayPowerOffScreen() {
@@ -1007,44 +926,45 @@ void displayGPSScreen() {
   u8g2.drawStr(70, 63, altBuf);
   u8g2.drawStr(100, 63, "m");
   
-  u8g2.sendBuffer();
+      u8g2.sendBuffer();
 }
 
 // Экран с информацией о WiFi и синхронизации с сервером
 void displayWiFiScreen() {
   u8g2.clearBuffer();
   
-  // Заголовок по центру - использую тот же шрифт, что и на экране GPS
+  // Заголовок по центру - используем одинаковый шрифт для всех экранов
   u8g2.setFont(u8g2_font_profont17_tr);
   u8g2.drawStr(30, 20, "WiFi");
   
-  // Разделительная линия на такой же высоте, как в GPS экране
+  // Разделительная линия
   u8g2.drawHLine(0, 24, 128);
   
-  // Основные данные - использую тот же шрифт, что и в GPS экране
+  // Основные данные с корректным позиционированием
   u8g2.setFont(u8g2_font_profont12_tr);
   
   // Статус WiFi
   u8g2.drawStr(5, 38, "WiFi:");
   u8g2.drawStr(65, 38, wifiConnected ? "ON" : "OFF");
   
-  // IP-адрес (если подключен) - используем меньший шрифт для IP адреса
+  // IP-адрес (если подключен) или причина отсутствия подключения
   if (wifiConnected) {
-    u8g2.setFont(u8g2_font_profont10_tr); // Меньший шрифт для IP
-    String ipStr = "IP: " + WiFi.localIP().toString();
-    u8g2.drawStr(5, 49, ipStr.c_str());
-    u8g2.setFont(u8g2_font_profont12_tr); // Возвращаем шрифт
+    char ipBuf[20];
+    sprintf(ipBuf, "IP: %s", WiFi.localIP().toString().c_str());
+    u8g2.drawStr(5, 48, ipBuf);
+  } else {
+    u8g2.drawStr(5, 48, "Press SETUP to config");
   }
   
   // Статус сопряжения
   u8g2.drawStr(5, 58, "Paired:");
   u8g2.drawStr(65, 58, isPaired ? "YES" : "NO");
   
-  // Инструкция по настройке на той же строке, что и высота в экране GPS
-  if (!isPaired) {
+  // Инструкция в зависимости от статуса
+  if (isPaired) {
+    u8g2.drawStr(5, 63, "Connected to server");
+  } else if (wifiConnected) {
     u8g2.drawStr(5, 63, "Long press to pair");
-  } else {
-    u8g2.drawStr(5, 63, "Press SETUP button");
   }
   
   u8g2.sendBuffer();
@@ -1174,35 +1094,12 @@ void checkLongPress() {
         }
       }
       else if (currentScreen == 2) {
-        // На экране WiFi
-        if (!isPaired && wifiConnected) {
-          // Если не сопряжено, запускаем режим сопряжения
-          Serial.println("Запуск режима сопряжения...");
-          
-          // Звуковое и визуальное подтверждение
-          tone(BUZZER_PIN, 2000, 100);
-          delay(100);
-          tone(BUZZER_PIN, 2500, 100);
-          
-          // Генерируем случайный seed для кода сопряжения
-          randomSeed(millis());
-          
-          // Запускаем режим сопряжения
-          if (startPairingMode()) {
-            // Переходим в режим сопряжения
-            deviceMode = MODE_PAIRING;
-            Serial.println("Устройство перешло в режим сопряжения");
-            Serial.print("Код сопряжения: ");
-            Serial.println(pairingCode);
-          } else {
-            Serial.println("Не удалось запустить режим сопряжения");
-            tone(BUZZER_PIN, 500, 300); // Сигнал ошибки
-          }
+        // На экране WiFi длительное нажатие запускает режим сопряжения или AP
+        if (wifiConnected && !isPaired) {
+          // Если WiFi подключен, но устройство не сопряжено, запускаем сопряжение
+          startPairingMode();
         } else if (!wifiConnected) {
-          // Если нет соединения с WiFi, запускаем режим AP
-          activateAPModeByButton();
-        } else {
-          // Уже сопряжено или нет соединения, запускаем режим AP
+          // Если WiFi не подключен, запускаем настройку
           activateAPModeByButton();
         }
       }
@@ -1256,7 +1153,7 @@ bool connectToWiFi() {
 
 // Функция для отображения экрана WiFi-настройки
 void displaySetupScreen() {
-      u8g2.clearBuffer();
+  u8g2.clearBuffer();
   
   // Заголовок
   u8g2.setFont(u8g2_font_profont17_tr);
@@ -1273,7 +1170,7 @@ void displaySetupScreen() {
   u8g2.drawStr(5, 60, "Open:");
   u8g2.drawStr(35, 60, "192.168.4.1");
   
-      u8g2.sendBuffer();
+  u8g2.sendBuffer();
 }
 
 // Функция для подключения к WiFi с использованием сохраненных настроек
@@ -1337,7 +1234,7 @@ bool connectToSavedWiFi() {
       // Если не последняя попытка, делаем небольшую паузу перед следующей
       if (attempt < MAX_CONNECTION_ATTEMPTS) {
         Serial.println("Небольшая пауза перед следующей попыткой...");
-      delay(1000);
+        delay(1000);
         WiFi.disconnect();
         delay(500);
       }
@@ -1478,7 +1375,7 @@ bool sendDataToServer() {
       }
       return false;
     }
-    } else {
+  } else {
     Serial.printf("Ошибка запроса: %s\n", http.errorToString(httpCode).c_str());
     serverConnected = false;
     
@@ -1610,33 +1507,35 @@ String generatePairingCode() {
 
 // Запуск режима сопряжения
 bool startPairingMode() {
-  if (!wifiConnected && !connectToWiFi()) {
-    Serial.println("Не удалось подключиться к WiFi для сопряжения");
-    return false;
+  // Проверяем подключение к WiFi
+  if (!wifiConnected) {
+    Serial.println("Попытка подключения к WiFi для сопряжения...");
+    wifiConnected = connectToSavedWiFi();
+    
+    if (!wifiConnected) {
+      Serial.println("Не удалось подключиться к WiFi для сопряжения");
+      tone(BUZZER_PIN, 500, 100); // Звуковой сигнал ошибки
+      return false;
+    }
   }
   
-  // Генерируем 6-значный код сопряжения
+  // Генерируем код сопряжения
   pairingCode = generatePairingCode();
   pairingMode = true;
+  deviceMode = MODE_PAIRING; // Переключаемся в режим сопряжения
   pairingStartTime = millis();
   
-  Serial.print("Сгенерирован код сопряжения: ");
+  Serial.print("Код сопряжения: ");
   Serial.println(pairingCode);
   
-  // Проверяем, настроен ли адрес сервера
-  if (serverAddress.length() == 0) {
-    Serial.println("Не указан адрес сервера");
-    return false;
-  }
+  // Звуковой сигнал успешного начала сопряжения
+  tone(BUZZER_PIN, 2000, 100);
+  delay(100);
+  tone(BUZZER_PIN, 2500, 100);
   
   // Отправляем запрос на сервер для начала процесса сопряжения
   HTTPClient http;
-  // Формируем URL с учетом API эндпоинта
-  String url = serverAddress + API_PAIR;
-  Serial.print("Отправка запроса на: ");
-  Serial.println(url);
-  
-  http.begin(url);
+  http.begin(serverAddress + API_PAIR);
   http.addHeader("Content-Type", "application/json");
   
   // Создаем JSON с данными устройства
@@ -1647,83 +1546,25 @@ bool startPairingMode() {
   String jsonData;
   serializeJson(doc, jsonData);
   
-  Serial.print("Отправляемые данные: ");
-  Serial.println(jsonData);
-  
   int httpCode = http.POST(jsonData);
-  Serial.print("HTTP код ответа: ");
-  Serial.println(httpCode);
   
-  if (httpCode > 0) {
+  if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
     String payload = http.getString();
-    Serial.print("Ответ сервера: ");
-    Serial.println(payload);
-    
-    // Закрываем HTTP клиент
+    Serial.println("Ответ сервера: " + payload);
     http.end();
     
-    // Запускаем веб-сервер с формой ввода кода сопряжения
-    setupPairingWebServer();
-    
+    // Переходим сразу к отображению экрана сопряжения
+    displayPairingScreen();
     return true;
   }
   
-  Serial.print("Ошибка запроса на сопряжение: ");
-  Serial.println(http.errorToString(httpCode));
+  Serial.println("Ошибка запроса на сопряжение: " + String(httpCode));
   http.end();
+  
+  // Возвращаемся в обычный режим при ошибке
+  pairingMode = false;
+  deviceMode = MODE_NORMAL;
   return false;
-}
-
-// Настройка веб-сервера для сопряжения
-void setupPairingWebServer() {
-  // Если сервер уже запущен, останавливаем его
-  if (webServer.client()) {
-    webServer.stop();
-    delay(100);
-  }
-  
-  // Настраиваем обработчик для страницы ввода кода
-  webServer.on("/", HTTP_GET, []() {
-    String html = "<!DOCTYPE html>"
-                 "<html>"
-                 "<head>"
-                 "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-                 "<meta charset='UTF-8'>"
-                 "<title>Pairing</title>"
-                 "<style>"
-                 "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }"
-                 ".container { max-width: 400px; margin: 0 auto; }"
-                 "h1 { color: #2c3e50; text-align: center; }"
-                 ".code { text-align: center; font-size: 32px; margin: 20px 0; font-weight: bold; color: #c0392b; }"
-                 "p { margin-bottom: 20px; }"
-                 "</style>"
-                 "</head>"
-                 "<body>"
-                 "<div class='container'>"
-                 "<h1>Device Pairing</h1>"
-                 "<p>Enter this code on your app or website:</p>"
-                 "<div class='code'>" + pairingCode + "</div>"
-                 "<p>This code will expire in <span id='timer'>5:00</span></p>"
-                 "<script>"
-                 "var timeLeft = 300;"
-                 "var timerId = setInterval(countdown, 1000);"
-                 "function countdown() {"
-                 "  if (timeLeft == 0) { clearTimeout(timerId); }"
-                 "  var minutes = Math.floor(timeLeft / 60);"
-                 "  var seconds = timeLeft % 60;"
-                 "  document.getElementById('timer').innerHTML = minutes + ':' + (seconds < 10 ? '0' : '') + seconds;"
-                 "  timeLeft--;"
-                 "}"
-                 "</script>"
-                 "</div>"
-                 "</body>"
-                 "</html>";
-    webServer.send(200, "text/html", html);
-  });
-  
-  // Запускаем сервер
-  webServer.begin();
-  Serial.println("Веб-сервер для сопряжения запущен");
 }
 
 // Проверка успешного сопряжения
@@ -1779,39 +1620,35 @@ bool checkPairingStatus() {
 
 // Отображение экрана сопряжения
 void displayPairingScreen() {
-      u8g2.clearBuffer();
+  u8g2.clearBuffer();
   
-  // Заголовок
+  // Заголовок - используем тот же шрифт, что и в других экранах
   u8g2.setFont(u8g2_font_profont17_tr);
-  u8g2.drawStr(15, 20, "СОПРЯЖЕНИЕ");
+  u8g2.drawStr(15, 20, "PAIRING");
   
   // Разделительная линия
   u8g2.drawHLine(0, 24, 128);
   
-  // Инструкции
+  // Инструкции и код
   u8g2.setFont(u8g2_font_profont12_tr);
-  u8g2.drawStr(5, 38, "Введите код:");
+  u8g2.drawStr(5, 38, "Enter code:");
   
   // Отображаем код большим шрифтом по центру
-  u8g2.setFont(u8g2_font_profont22_tn); // Используем большой шрифт для кода
+  u8g2.setFont(u8g2_font_profont22_tn);
   int codeWidth = u8g2.getStrWidth(pairingCode.c_str());
   u8g2.drawStr((128-codeWidth)/2, 58, pairingCode.c_str());
   
   // Отображаем время до конца сопряжения
-  unsigned long elapsedTime = millis() - pairingStartTime;
-  unsigned long remainingTime = (elapsedTime < 300000) ? (300000 - elapsedTime) / 1000 : 0;
+  unsigned long remainingTime = (300000 - (millis() - pairingStartTime)) / 1000;
+  char timeBuf[10];
+  sprintf(timeBuf, "%lu sec", remainingTime);
   
-  char timeBuf[16];
-  sprintf(timeBuf, "%lu:%02lu", remainingTime / 60, remainingTime % 60);
+  u8g2.setFont(u8g2_font_profont10_tr);
+  u8g2.drawStr(5, 63, "Time left:");
+  u8g2.drawStr(60, 63, timeBuf);
   
-  u8g2.setFont(u8g2_font_profont12_tr);
-  u8g2.drawStr(5, 63, "Осталось:");
-  u8g2.drawStr(70, 63, timeBuf);
-  
-      u8g2.sendBuffer();
+  u8g2.sendBuffer();
 }
-
-// startAPMode был удален для устранения дублирования
 
 // Обработчик корневой страницы - форма настройки
 void handleRoot() {
@@ -1827,8 +1664,9 @@ void handleRoot() {
                 "h1 { color: #2c3e50; text-align: center; }"
                 "label { display: block; margin-bottom: 5px; font-weight: bold; }"
                 "input[type='text'], input[type='password'] { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }"
-                "button { background-color: #2980b9; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; }"
+                "button { background-color: #2980b9; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 15px; }"
                 "button:hover { background-color: #3498db; }"
+                ".pairing { margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; }"
                 "</style>"
                 "</head>"
                 "<body>"
@@ -1839,8 +1677,18 @@ void handleRoot() {
                 "<input type='text' id='ssid' name='ssid' required>"
                 "<label for='password'>WiFi Password:</label>"
                 "<input type='password' id='password' name='password'>"
-                "<button type='submit'>Save</button>"
+                "<button type='submit'>Save WiFi Settings</button>"
                 "</form>"
+                
+                "<div class='pairing'>"
+                "<h2>Device Pairing</h2>"
+                "<p>If you see a pairing code on your device, enter it here:</p>"
+                "<form action='/pair' method='post'>"
+                "<label for='pairingCode'>Pairing Code:</label>"
+                "<input type='text' id='pairingCode' name='pairingCode' placeholder='6-digit code' minlength='6' maxlength='6' pattern='[0-9]{6}'>"
+                "<button type='submit'>Pair Device</button>"
+                "</form>"
+                "</div>"
                 "</div>"
                 "</body>"
                 "</html>";
@@ -1848,98 +1696,72 @@ void handleRoot() {
   webServer.send(200, "text/html", html);
 }
 
-// Обработчик сохранения настроек
-void handleSaveConfig() {
-  Serial.println("Получены настройки WiFi:");
+// Обработчик для длительного нажатия на экране WiFi
+void checkLongPress() {
+  static unsigned long longPressStart = 0;
+  static bool longPressActive = false;
   
-  configWifiSSID = webServer.arg("ssid");
-  configWifiPassword = webServer.arg("password");
-  serverAddress = SERVER_URL; // Используем фиксированный адрес сервера
+  // Проверяем только когда включено питание
+  if (!isPowerOn) return;
   
-  Serial.print("SSID: '");
-  Serial.print(configWifiSSID);
-  Serial.println("'");
-  Serial.print("Password length: ");
-  Serial.println(configWifiPassword.length());
+  int funcReading = digitalRead(FUNC_SWITCH);
   
-  // Сохраняем настройки
-  saveWiFiSettings();
+  // Отслеживаем начало нажатия
+  if (funcReading == LOW && lastFuncState == HIGH) {
+    longPressStart = millis();
+    longPressActive = true;
+  }
   
-  // Отправляем ответ пользователю
-  String html = "<!DOCTYPE html>"
-                "<html>"
-                "<head>"
-                "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
-                "<meta charset='UTF-8'>"
-                "<title>Settings Saved</title>"
-                "<style>"
-                "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; text-align: center; }"
-                ".container { max-width: 400px; margin: 0 auto; }"
-                "h1 { color: #27ae60; }"
-                ".success-icon { font-size: 48px; color: #27ae60; margin-bottom: 20px; }"
-                "p { margin-bottom: 20px; }"
-                ".restart-timer { font-weight: bold; color: #e74c3c; }"
-                "</style>"
-                "</head>"
-                "<body>"
-                "<div class='container'>"
-                "<div class='success-icon'>✓</div>"
-                "<h1>Настройки сохранены</h1>"
-                "<p>Устройство перезагрузится через <span class='restart-timer' id='timer'>5</span> секунд.</p>"
-                "<script>"
-                "var timeLeft = 5;"
-                "var timerId = setInterval(countdown, 1000);"
-                "function countdown() {"
-                "  if (timeLeft == 0) {"
-                "    clearTimeout(timerId);"
-                "    window.location.href = 'http://192.168.1.1';"
-                "  }"
-                "  document.getElementById('timer').innerHTML = timeLeft;"
-                "  timeLeft--;"
-                "}"
-                "</script>"
-                "</div>"
-                "</body>"
-                "</html>";
-                
-  webServer.send(200, "text/html", html);
-  
-  // Задержка, чтобы клиент получил страницу до перезагрузки
-      delay(1000);
-  
-  // Закрываем режим AP
-  webServer.stop();
-  dnsServer.stop();
-  WiFi.softAPdisconnect(true);
-  
-  // Переходим в нормальный режим
-  deviceMode = MODE_NORMAL;
-  
-  // Пытаемся подключиться с новыми настройками
-  Serial.println("Перезагрузка WiFi с новыми настройками...");
-  WiFi.disconnect(true);
-  delay(1000);
-  
-  // Попытка подключения к WiFi с сохраненными настройками
-  wifiConnected = connectToSavedWiFi();
-  
-  if (wifiConnected) {
-    Serial.println("Подключено к WiFi с новыми настройками!");
-    tone(BUZZER_PIN, 2000, 100); // Звуковое подтверждение
-    delay(100);
-    tone(BUZZER_PIN, 2500, 100);
-    
-    // Если успешно подключились, делаем красивую индикацию
-    setIndicator(INDICATOR_SUCCESS, 1000);
-    
-    // Проверяем соединение с сервером
-    if (!serverConnected) {
-      serverConnected = checkServerConnection();
+  // Проверяем длительное нажатие
+  if (longPressActive && funcReading == LOW) {
+    if (millis() - longPressStart > 2000) {
+      if (currentScreen == 0) {
+        // Сброс счетчика поездки на главном экране
+        tripDistance = 0;
+        maxSpeed = 0;
+        
+        // Звуковое подтверждение
+        tone(BUZZER_PIN, 1500, 50);
+        delay(100);
+        tone(BUZZER_PIN, 2000, 50);
+      } 
+      else if (currentScreen == 1) {
+        // Переключение звуков GPS на экране GPS
+        gpsStatusSoundEnabled = !gpsStatusSoundEnabled;
+        
+        if (gpsStatusSoundEnabled) {
+          tone(BUZZER_PIN, 1000, 50);
+          delay(50);
+          tone(BUZZER_PIN, 2000, 50);
+        } else {
+          tone(BUZZER_PIN, 2000, 50);
+          delay(50);
+          tone(BUZZER_PIN, 1000, 50);
+        }
+      }
+      else if (currentScreen == 2) {
+        // На экране WiFi длительное нажатие запускает режим сопряжения или AP
+        if (wifiConnected && !isPaired) {
+          // Если WiFi подключен, но устройство не сопряжено, запускаем сопряжение
+          startPairingMode();
+        } else if (!wifiConnected) {
+          // Если WiFi не подключен, запускаем настройку
+          activateAPModeByButton();
+        }
+      }
+      
+      // Предотвращение повторных срабатываний
+      longPressActive = false;
+      
+      // RGB эффект
+      isRGBEffect = true;
+      rgbEffectStartTime = millis();
     }
-  } else {
-    Serial.println("Не удалось подключиться к WiFi с новыми настройками");
-    tone(BUZZER_PIN, 1000, 300); // Звуковое оповещение об ошибке
-    setIndicator(INDICATOR_ERROR, 1000);
+  }
+  
+  // Сброс при отпускании
+  if (funcReading == HIGH && lastFuncState == LOW) {
+    longPressActive = false;
   }
 }
 
@@ -1981,6 +1803,7 @@ void prepareAPMode() {
   // Настраиваем веб-сервер
   webServer.on("/", handleRoot);
   webServer.on("/save", HTTP_POST, handleSaveConfig);
+  webServer.on("/pair", HTTP_POST, handlePairDevice);
   webServer.onNotFound([]() {
     // Перенаправляем на страницу настройки
     webServer.sendHeader("Location", "/", true);
@@ -1991,17 +1814,13 @@ void prepareAPMode() {
   // Сохраняем время запуска
   apStartTime = millis();
   
-  // Изменяем цвет на синий для индикации
-  setRGBColor(0, 0, RGB_DEFAULT_BRIGHTNESS);
-  
-  // Выводим информацию в Serial
-  Serial.println("Точка доступа запущена:");
+  Serial.println("Точка доступа запущена");
   Serial.print("SSID: ");
   Serial.println(AP_SSID);
   Serial.print("Password: ");
   Serial.println(AP_PASSWORD);
   Serial.print("IP: ");
-  Serial.println(WiFi.softAPIP());
+  Serial.println(WiFi.softAPIP().toString());
 }
 
 // Заглушка для обратной совместимости
@@ -2016,8 +1835,7 @@ bool wifiScreenLongPressActive = false;
 // Переменные для определения состояния кнопки настройки WiFi
 int lastWifiSetupBtnState = HIGH;
 unsigned long lastWifiSetupBtnTime = 0;
-unsigned long wifiSetupBtnPressStart = 0;
-bool wifiSetupBtnLongPress = false;
+bool wifiSetupBtnPressed = false;
 
 // Добавляем функцию для проверки состояния кнопки настройки WiFi
 void checkWifiSetupButton() {
@@ -2032,67 +1850,25 @@ void checkWifiSetupButton() {
       
       // Если кнопка нажата (LOW)
       if (currentState == LOW && lastWifiSetupBtnState == HIGH) {
-        // Запоминаем время начала нажатия для определения длительного нажатия
-        wifiSetupBtnPressStart = millis();
+        wifiSetupBtnPressed = true;
         
         // Звуковой сигнал при нажатии
         tone(BUZZER_PIN, 1500, 50);
-      }
-      // Если кнопка отпущена (HIGH)
-      else if (currentState == HIGH && lastWifiSetupBtnState == LOW) {
-        // Если было долгое нажатие, то не выполняем действие при отпускании
-        if (!wifiSetupBtnLongPress) {
-          // Если устройство включено и нажатие не было длительным,
-          // определяем длительность нажатия
-          unsigned long pressDuration = millis() - wifiSetupBtnPressStart;
-          
-          if (pressDuration >= 2000) {
-            // Это было долгое нажатие, но мы его пропустили (не должно происходить)
-            wifiSetupBtnLongPress = false;
-          } else if (isPowerOn) {
-            // Если короткое нажатие и устройство включено - запускаем режим AP
-            activateAPModeByButton();
-          }
+        
+        // Если устройство включено, запускаем режим настройки WiFi
+        if (isPowerOn) {
+          // Начинаем процесс настройки WiFi
+          activateAPModeByButton();
         }
-        // Сбрасываем флаг длительного нажатия
-        wifiSetupBtnLongPress = false;
       }
       
       lastWifiSetupBtnState = currentState;
     }
   }
   
-  // Проверка на длительное нажатие
-  if (currentState == LOW && !wifiSetupBtnLongPress) {
-    // Если кнопка удерживается нажатой более 2 секунд
-    if (millis() - wifiSetupBtnPressStart >= 2000) {
-      wifiSetupBtnLongPress = true;
-      
-      // Звуковой сигнал для подтверждения длительного нажатия
-      tone(BUZZER_PIN, 2000, 100);
-      delay(100);
-      tone(BUZZER_PIN, 2500, 100);
-      
-      // Если устройство включено, запускаем процесс сопряжения
-      if (isPowerOn && currentScreen == 2 && !isPaired && wifiConnected) {
-        Serial.println("Запуск режима сопряжения через длительное нажатие...");
-        
-        // Генерируем случайный seed для кода сопряжения
-        randomSeed(millis());
-        
-        // Запускаем режим сопряжения
-        if (startPairingMode()) {
-          // Переходим в режим сопряжения
-          deviceMode = MODE_PAIRING;
-          Serial.println("Устройство перешло в режим сопряжения");
-          Serial.print("Код сопряжения: ");
-          Serial.println(pairingCode);
-    } else {
-          Serial.println("Не удалось запустить режим сопряжения");
-          tone(BUZZER_PIN, 500, 300); // Сигнал ошибки
-        }
-      }
-    }
+  // Сбрасываем флаг, если кнопка отпущена
+  if (currentState == HIGH && wifiSetupBtnPressed) {
+    wifiSetupBtnPressed = false;
   }
 }
 
@@ -2147,44 +1923,267 @@ void exitAPMode() {
   setRGBColor(0, 1, 0);
 }
 
-// Проверка соединения с сервером
-bool checkServerConnection() {
-  // Проверяем подключение к WiFi
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Нет подключения к WiFi для проверки сервера");
-    return false;
+// Функция для обработки сохранения настроек WiFi
+void handleSaveConfig() {
+  Serial.println("Получены настройки WiFi:");
+  
+  configWifiSSID = webServer.arg("ssid");
+  configWifiPassword = webServer.arg("password");
+  serverAddress = SERVER_URL; // Используем фиксированный адрес сервера
+  
+  Serial.print("SSID: '");
+  Serial.print(configWifiSSID);
+  Serial.println("'");
+  Serial.print("Password length: ");
+  Serial.println(configWifiPassword.length());
+  Serial.print("Server: '");
+  Serial.print(serverAddress);
+  Serial.println("'");
+  
+  // Проверяем, что SSID не пустой
+  if (configWifiSSID.length() == 0) {
+    String errorHtml = "<!DOCTYPE html>"
+                  "<html>"
+                  "<head>"
+                  "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                  "<meta charset='UTF-8'>"
+                  "<title>Error</title>"
+                  "<style>"
+                  "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; text-align: center; }"
+                  ".container { max-width: 400px; margin: 0 auto; }"
+                  "h1 { color: #e74c3c; }"
+                  "p { margin-bottom: 20px; }"
+                  ".icon { font-size: 48px; color: #e74c3c; margin-bottom: 20px; }"
+                  "button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }"
+                  "</style>"
+                  "</head>"
+                  "<body>"
+                  "<div class='container'>"
+                  "<div class='icon'>✗</div>"
+                  "<h1>Error</h1>"
+                  "<p>WiFi name cannot be empty.</p>"
+                  "<a href='/'><button>Back</button></a>"
+                  "</div>"
+                  "</body>"
+                  "</html>";
+    
+    webServer.send(400, "text/html", errorHtml);
+    return;
   }
   
-  // Показываем индикацию проверки соединения
-  setIndicator(INDICATOR_CHECKING, 3000); // Максимум 3 секунды на проверку
-  
-  HTTPClient http;
-  Serial.print("Проверка соединения с сервером: ");
-  Serial.println(serverAddress);
-  
-  // Делаем простой GET запрос
-  http.begin(serverAddress);
-  int httpCode = http.GET();
-  
-  if (httpCode > 0) {
-    Serial.print("HTTP код ответа: ");
-    Serial.println(httpCode);
+  // Проверяем минимальную длину пароля
+  if (configWifiPassword.length() > 0 && configWifiPassword.length() < 8) {
+    String errorHtml = "<!DOCTYPE html>"
+                  "<html>"
+                  "<head>"
+                  "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                  "<meta charset='UTF-8'>"
+                  "<title>Error</title>"
+                  "<style>"
+                  "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; text-align: center; }"
+                  ".container { max-width: 400px; margin: 0 auto; }"
+                  "h1 { color: #e74c3c; }"
+                  "p { margin-bottom: 20px; }"
+                  ".icon { font-size: 48px; color: #e74c3c; margin-bottom: 20px; }"
+                  "button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }"
+                  "</style>"
+                  "</head>"
+                  "<body>"
+                  "<div class='container'>"
+                  "<div class='icon'>✗</div>"
+                  "<h1>Error</h1>"
+                  "<p>Password must be at least 8 characters.</p>"
+                  "<a href='/'><button>Back</button></a>"
+                  "</div>"
+                  "</body>"
+                  "</html>";
     
-    if (httpCode == HTTP_CODE_OK) {
-      Serial.println("Сервер доступен");
-      http.end();
-      
-      // Индикация успешного соединения
-      setIndicator(INDICATOR_SUCCESS, 500);
-      return true;
+    webServer.send(400, "text/html", errorHtml);
+    return;
+  }
+  
+  // Сохраняем настройки
+  saveWiFiSettings();
+  
+  // Отправляем страницу успешного сохранения с поддержкой UTF-8
+  String html = "<!DOCTYPE html>"
+                "<html>"
+                "<head>"
+                "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                "<meta charset='UTF-8'>"
+                "<title>Success</title>"
+                "<style>"
+                "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; text-align: center; }"
+                ".container { max-width: 400px; margin: 0 auto; }"
+                "h1 { color: #27ae60; }"
+                "p { margin-bottom: 20px; }"
+                ".icon { font-size: 48px; color: #27ae60; margin-bottom: 20px; }"
+                "</style>"
+                "</head>"
+                "<body>"
+                "<div class='container'>"
+                "<div class='icon'>✓</div>"
+                "<h1>Success!</h1>"
+                "<p>Settings saved. Device will restart.</p>"
+                "</div>"
+                "</body>"
+                "</html>";
+                
+  webServer.send(200, "text/html", html);
+  
+  // Даем время браузеру получить страницу
+  delay(2000);
+  
+  // Останавливаем серверы и перезагружаем устройство
+  webServer.stop();
+  dnsServer.stop();
+  
+  deviceMode = MODE_NORMAL;
+  
+  // Для надежности еще раз сохраняем настройки перед перезагрузкой
+  saveWiFiSettings();
+  
+  // Перезагружаем устройство
+  ESP.restart();
+}
+
+// Обработчик отправки кода сопряжения
+void handlePairDevice() {
+  String pairingCodeInput = webServer.arg("pairingCode");
+  
+  // Проверяем формат кода (6 цифр)
+  if (pairingCodeInput.length() != 6 || !isNumeric(pairingCodeInput)) {
+    String errorHtml = "<!DOCTYPE html>"
+                "<html>"
+                "<head>"
+                "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                "<meta charset='UTF-8'>"
+                "<title>Error</title>"
+                "<style>"
+                "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; text-align: center; }"
+                ".container { max-width: 400px; margin: 0 auto; }"
+                "h1 { color: #e74c3c; }"
+                "p { margin-bottom: 20px; }"
+                ".icon { font-size: 48px; color: #e74c3c; margin-bottom: 20px; }"
+                "button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }"
+                "</style>"
+                "</head>"
+                "<body>"
+                "<div class='container'>"
+                "<div class='icon'>✗</div>"
+                "<h1>Error</h1>"
+                "<p>Invalid pairing code. Must be 6 digits.</p>"
+                "<a href='/'><button>Back</button></a>"
+                "</div>"
+                "</body>"
+                "</html>";
+    
+    webServer.send(400, "text/html", errorHtml);
+    return;
+  }
+  
+  // Отправляем информацию о сопряжении на сервер
+  HTTPClient http;
+  String serverUrl = String(SERVER_URL) + String(API_PAIR_CONFIRM);
+  http.begin(serverUrl);
+  http.addHeader("Content-Type", "application/json");
+  
+  // Формируем JSON с данными для подтверждения сопряжения
+  StaticJsonDocument<256> doc;
+  doc["device_id"] = deviceID;
+  doc["pairing_code"] = pairingCodeInput;
+  
+  String jsonData;
+  serializeJson(doc, jsonData);
+  
+  int httpCode = http.POST(jsonData);
+  bool success = false;
+  String authTokenReceived = "";
+  
+  if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
+    String payload = http.getString();
+    Serial.println("Ответ сервера при сопряжении: " + payload);
+    
+    // Парсим ответ
+    StaticJsonDocument<256> responseDoc;
+    DeserializationError error = deserializeJson(responseDoc, payload);
+    
+    if (!error && responseDoc["success"]) {
+      authTokenReceived = responseDoc["token"].as<String>();
+      success = true;
     }
   }
   
-  Serial.print("Ошибка соединения с сервером: ");
-  Serial.println(http.errorToString(httpCode));
   http.end();
   
-  // Индикация ошибки
-  setIndicator(INDICATOR_ERROR, 1000);
-  return false;
+  // Отображаем результат
+  if (success) {
+    // Сохраняем полученный токен
+    authToken = authTokenReceived;
+    isPaired = true;
+    savePairingSettings();
+    
+    String successHtml = "<!DOCTYPE html>"
+                "<html>"
+                "<head>"
+                "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                "<meta charset='UTF-8'>"
+                "<title>Success</title>"
+                "<style>"
+                "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; text-align: center; }"
+                ".container { max-width: 400px; margin: 0 auto; }"
+                "h1 { color: #27ae60; }"
+                "p { margin-bottom: 20px; }"
+                ".icon { font-size: 48px; color: #27ae60; margin-bottom: 20px; }"
+                "</style>"
+                "</head>"
+                "<body>"
+                "<div class='container'>"
+                "<div class='icon'>✓</div>"
+                "<h1>Success!</h1>"
+                "<p>Device successfully paired with your account! You can now close this page.</p>"
+                "</div>"
+                "</body>"
+                "</html>";
+    
+    webServer.send(200, "text/html", successHtml);
+  } else {
+    // Сопряжение не удалось
+    String errorHtml = "<!DOCTYPE html>"
+                "<html>"
+                "<head>"
+                "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+                "<meta charset='UTF-8'>"
+                "<title>Error</title>"
+                "<style>"
+                "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; text-align: center; }"
+                ".container { max-width: 400px; margin: 0 auto; }"
+                "h1 { color: #e74c3c; }"
+                "p { margin-bottom: 20px; }"
+                ".icon { font-size: 48px; color: #e74c3c; margin-bottom: 20px; }"
+                "button { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }"
+                "</style>"
+                "</head>"
+                "<body>"
+                "<div class='container'>"
+                "<div class='icon'>✗</div>"
+                "<h1>Error</h1>"
+                "<p>Pairing failed. Invalid code or connection error.</p>"
+                "<a href='/'><button>Try Again</button></a>"
+                "</div>"
+                "</body>"
+                "</html>";
+    
+    webServer.send(400, "text/html", errorHtml);
+  }
+}
+
+// Проверка, является ли строка числовой
+bool isNumeric(String str) {
+  for (unsigned int i = 0; i < str.length(); i++) {
+    if (!isDigit(str.charAt(i))) {
+      return false;
+    }
+  }
+  return true;
 }

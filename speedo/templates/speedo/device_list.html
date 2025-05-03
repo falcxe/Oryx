@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои устройства{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Мои устройства</h1>
+    
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="mb-3">
+        <a href="{% url 'add_device' %}" class="btn btn-primary">Добавить устройство</a>
+        <a href="{% url 'confirm_device_pairing' %}" class="btn btn-success">Сопряжение с кодом</a>
+    </div>
+    
+    {% if devices %}
+    <div class="row">
+        {% for device in devices %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">{{ device.device_name|default:device.device_id }}</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>ID:</strong> {{ device.device_id }}</p>
+                    <p><strong>Статус:</strong> 
+                        {% if device.is_active %}
+                        <span class="badge bg-success">Активно</span>
+                        {% else %}
+                        <span class="badge bg-danger">Деактивировано</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Добавлено:</strong> {{ device.created_at|date:"d.m.Y H:i" }}</p>
+                    {% if device.last_connected %}
+                    <p><strong>Последнее соединение:</strong> {{ device.last_connected|date:"d.m.Y H:i" }}</p>
+                    {% else %}
+                    <p><strong>Последнее соединение:</strong> Нет данных</p>
+                    {% endif %}
+                    <a href="{% url 'device_details' device.id %}" class="btn btn-info">Подробнее</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        У вас еще нет зарегистрированных устройств. Добавьте новое устройство или выполните сопряжение.
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

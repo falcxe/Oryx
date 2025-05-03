@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Устройство: {{ device.device_name|default:device.device_id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Устройство: {{ device.device_name|default:device.device_id }}</h1>
+        <a href="{% url 'device_list' %}" class="btn btn-secondary">Назад к списку</a>
+    </div>
+    
+    {% if messages %}
+    <div class="messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Информация об устройстве</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">ID устройства</dt>
+                        <dd class="col-sm-8">{{ device.device_id }}</dd>
+                        
+                        <dt class="col-sm-4">Название</dt>
+                        <dd class="col-sm-8">{{ device.device_name|default:"Не задано" }}</dd>
+                        
+                        <dt class="col-sm-4">Статус</dt>
+                        <dd class="col-sm-8">
+                            {% if device.is_active %}
+                            <span class="badge bg-success">Активно</span>
+                            {% else %}
+                            <span class="badge bg-danger">Деактивировано</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Токен</dt>
+                        <dd class="col-sm-8">
+                            <small class="text-muted">{{ device.token }}</small>
+                        </dd>
+                        
+                        <dt class="col-sm-4">Добавлено</dt>
+                        <dd class="col-sm-8">{{ device.created_at|date:"d.m.Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Последнее соединение</dt>
+                        <dd class="col-sm-8">
+                            {% if device.last_connected %}
+                            {{ device.last_connected|date:"d.m.Y H:i" }}
+                            {% else %}
+                            Нет данных
+                            {% endif %}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5>Действия</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="rename">
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" name="device_name" value="{{ device.device_name }}" placeholder="Новое название">
+                                <button class="btn btn-outline-primary" type="submit">Переименовать</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <div class="d-flex flex-wrap gap-2">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="regenerate_token">
+                            <button type="submit" class="btn btn-warning">Обновить токен</button>
+                        </form>
+                        
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle_active">
+                            {% if device.is_active %}
+                            <button type="submit" class="btn btn-danger">Деактивировать</button>
+                            {% else %}
+                            <button type="submit" class="btn btn-success">Активировать</button>
+                            {% endif %}
+                        </form>
+                        
+                        <form method="post" class="d-inline" onsubmit="return confirm('Вы уверены, что хотите удалить это устройство?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="delete">
+                            <button type="submit" class="btn btn-danger">Удалить устройство</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Последние данные</h5>
+                </div>
+                <div class="card-body">
+                    {% if last_data %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h3>{{ last_data.speed }} км/ч</h3>
+                                    <small class="text-muted">Скорость</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <p>Координаты:</p>
+                                    <small>{{ last_data.latitude }}, {{ last_data.longitude }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted">Последнее обновление: {{ last_data.timestamp|date:"d.m.Y H:i:s" }}</p>
+                    {% else %}
+                    <div class="alert alert-info">
+                        Нет данных от устройства.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <a href="#" class="btn btn-primary">Показать все данные</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5>Инструкции по подключению</h5>
+                </div>
+                <div class="card-body">
+                    <p>Для подключения устройства к серверу используйте следующие настройки:</p>
+                    <div class="mb-3">
+                        <label class="form-label">Токен авторизации</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" value="{{ device.token }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('{{ device.token }}')">Копировать</button>
+                        </div>
+                    </div>
+                    <p>Используйте этот токен для авторизации в HTTP-запросах, добавляя заголовок:</p>
+                    <pre><code>Authorization: Bearer {{ device.token }}</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard(text) {
+    var input = document.createElement('textarea');
+    input.value = text;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+    alert('Токен скопирован в буфер обмена');
+}
+</script>
+{% endblock %} 

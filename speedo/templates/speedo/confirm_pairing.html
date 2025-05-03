@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Сопряжение с устройством{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Сопряжение с устройством</h1>
+    
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Введите код сопряжения</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Для сопряжения с устройством, вам нужно:
+                    </p>
+                    <ol>
+                        <li>Перевести устройство в режим сопряжения, удерживая кнопку функции во время включения</li>
+                        <li>На устройстве появится код сопряжения</li>
+                        <li>Введите этот код в форму ниже</li>
+                    </ol>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="pairing_code" class="form-label">Код сопряжения</label>
+                            <input type="text" class="form-control" id="pairing_code" name="pairing_code" required>
+                            <div class="form-text">Введите 6-значный код, отображаемый на устройстве</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="device_name" class="form-label">Название устройства (опционально)</label>
+                            <input type="text" class="form-control" id="device_name" name="device_name">
+                            <div class="form-text">Дайте устройству понятное название</div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Выполнить сопряжение</button>
+                        <a href="{% url 'device_list' %}" class="btn btn-secondary">Отмена</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
