@@ -19,4 +19,5 @@ urlpatterns = [
     # APIs для устройств
     path('api/auth/', views.api_auth, name='api_auth'),
     path('api/pair/', views.device_pair, name='device_pair'),
+    path('api/check_pairing/<str:code>/', views.check_pairing_status, name='check_pairing_status'),
 ]

@@ -39,7 +39,7 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-key-for-development')
 DEBUG = env('DEBUG', default=False)
 
 # Расширенный список хостов для Railway
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1', 'oryx-optj.onrender.com', '*'])
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '.onrender.com'] + env.list('ALLOWED_HOSTS', default=[])
 
 
 # Application definition

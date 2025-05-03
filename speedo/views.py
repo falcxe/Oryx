@@ -3,7 +3,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 import json
-from .models import SpeedometerData, DeviceRegistration
+from .models import SpeedometerData, DeviceRegistration, PairingCode
 from django.utils import timezone
 from datetime import datetime
 from django.views.decorators.http import require_POST
@@ -262,11 +262,20 @@ def device_pair(request):
                     'message': 'Не указан device_id или pairing_code'
                 }, status=400)
             
-            # Генерируем временный код сопряжения и сохраняем его
-            # Здесь нужно реализовать хранение временных кодов сопряжения
-            # Например, в Redis или в отдельной модели
+            # Проверяем, не используется ли код уже
+            if PairingCode.objects.filter(code=pairing_code).exists():
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Этот код уже используется. Пожалуйста, сгенерируйте новый.'
+                }, status=400)
             
-            # В этом примере мы просто возвращаем успех
+            # Создаем запись с кодом сопряжения
+            pairing = PairingCode.create_code(
+                device_id=device_id,
+                code=pairing_code,
+                expires_in_minutes=5
+            )
+            
             return JsonResponse({
                 'success': True,
                 'message': 'Устройство готово к сопряжению',
@@ -285,6 +294,42 @@ def device_pair(request):
         'message': 'Метод не поддерживается'
     }, status=405)
 
+@csrf_exempt
+def check_pairing_status(request, code):
+    """API для проверки статуса сопряжения по коду"""
+    try:
+        pairing = get_object_or_404(PairingCode, code=code)
+        
+        # Если код уже использован
+        if pairing.is_paired:
+            # Находим устройство, которое было сопряжено с этим кодом
+            device = DeviceRegistration.objects.get(device_id=pairing.device_id)
+            
+            return JsonResponse({
+                'status': 'paired',
+                'message': 'Устройство успешно сопряжено',
+                'auth_token': str(device.token)
+            })
+        
+        # Если срок действия кода истек
+        if not pairing.is_valid():
+            return JsonResponse({
+                'status': 'expired',
+                'message': 'Срок действия кода истек'
+            }, status=400)
+        
+        # Код действителен, но ещё не использован
+        return JsonResponse({
+            'status': 'waiting',
+            'message': 'Ожидание подтверждения пользователем'
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Ошибка: {str(e)}'
+        }, status=400)
+
 @login_required
 def confirm_device_pairing(request):
     """Страница для ввода кода сопряжения и привязки устройства к аккаунту"""
@@ -292,21 +337,50 @@ def confirm_device_pairing(request):
         pairing_code = request.POST.get('pairing_code')
         device_name = request.POST.get('device_name', '')
         
-        # Здесь должна быть проверка кода сопряжения
-        # и связывание устройства с пользователем
+        # Проверяем код сопряжения
+        try:
+            pairing = PairingCode.objects.get(code=pairing_code)
+            
+            # Проверяем, не истек ли срок действия кода
+            if not pairing.is_valid():
+                messages.error(request, 'Срок действия кода истек. Пожалуйста, сгенерируйте новый код на устройстве.')
+                return redirect('confirm_device_pairing')
+            
+            # Проверяем, не существует ли уже устройство с таким ID
+            if DeviceRegistration.objects.filter(device_id=pairing.device_id).exists():
+                device = DeviceRegistration.objects.get(device_id=pairing.device_id)
+                
+                # Если устройство принадлежит другому пользователю
+                if device.user != request.user:
+                    messages.error(request, 'Это устройство уже зарегистрировано другим пользователем.')
+                    return redirect('confirm_device_pairing')
+                
+                # Если устройство принадлежит текущему пользователю, обновляем его данные
+                device.device_name = device_name or device.device_name
+                device.is_active = True
+                device.save()
+                
+                messages.success(request, f'Устройство {device.device_name or device.device_id} успешно обновлено.')
+            else:
+                # Создаем новое устройство
+                device = DeviceRegistration(
+                    user=request.user,
+                    device_id=pairing.device_id,
+                    device_name=device_name
+                )
+                device.save()
+                
+                messages.success(request, f'Устройство {device_name or pairing.device_id} успешно сопряжено')
+            
+            # Отмечаем код как использованный
+            pairing.is_paired = True
+            pairing.paired_by = request.user
+            pairing.save()
+            
+            return redirect('device_list')
         
-        # Пример создания записи устройства (в реальности ID должно приходить от устройства)
-        device_id = f"ESP32-{uuid.uuid4().hex[:8]}"
-        
-        device = DeviceRegistration(
-            user=request.user,
-            device_id=device_id,
-            device_name=device_name
-        )
-        device.save()
-        
-        messages.success(request, f'Устройство {device_name or device_id} успешно сопряжено')
-        return redirect('device_list')
+        except PairingCode.DoesNotExist:
+            messages.error(request, 'Неверный код сопряжения. Пожалуйста, проверьте код и попробуйте снова.')
     
     return render(request, 'speedo/confirm_pairing.html')
 

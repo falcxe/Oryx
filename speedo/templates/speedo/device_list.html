@@ -1,58 +1,71 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Мои устройства{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Мои устройства</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Мои устройства</h1>
+        <a href="{% url 'confirm_device_pairing' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Добавить устройство
+        </a>
+    </div>
     
     {% if messages %}
-    <div class="messages">
+    <div class="mb-4">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
             {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
     </div>
     {% endif %}
     
-    <div class="mb-3">
-        <a href="{% url 'add_device' %}" class="btn btn-primary">Добавить устройство</a>
-        <a href="{% url 'confirm_device_pairing' %}" class="btn btn-success">Сопряжение с кодом</a>
-    </div>
-    
     {% if devices %}
     <div class="row">
         {% for device in devices %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title">{{ device.device_name|default:device.device_id }}</h5>
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 {% if not device.is_active %}border-secondary opacity-75{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-truncate" title="{{ device.device_name|default:device.device_id }}">
+                        {{ device.device_name|default:device.device_id }}
+                    </h5>
+                    <span class="badge {% if device.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ device.is_active|yesno:"Активно,Отключено" }}
+                    </span>
                 </div>
                 <div class="card-body">
-                    <p><strong>ID:</strong> {{ device.device_id }}</p>
-                    <p><strong>Статус:</strong> 
-                        {% if device.is_active %}
-                        <span class="badge bg-success">Активно</span>
-                        {% else %}
-                        <span class="badge bg-danger">Деактивировано</span>
-                        {% endif %}
-                    </p>
-                    <p><strong>Добавлено:</strong> {{ device.created_at|date:"d.m.Y H:i" }}</p>
+                    <p class="card-text small text-muted">ID: {{ device.device_id }}</p>
+                    
                     {% if device.last_connected %}
-                    <p><strong>Последнее соединение:</strong> {{ device.last_connected|date:"d.m.Y H:i" }}</p>
+                    <p class="card-text small">Последнее подключение: <br>{{ device.last_connected|date:"d.m.Y H:i" }}</p>
                     {% else %}
-                    <p><strong>Последнее соединение:</strong> Нет данных</p>
+                    <p class="card-text small text-muted">Устройство еще не подключалось</p>
                     {% endif %}
-                    <a href="{% url 'device_details' device.id %}" class="btn btn-info">Подробнее</a>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <a href="{% url 'device_details' device.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-cog me-1"></i> Управление
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <div class="alert alert-info">
-        У вас еще нет зарегистрированных устройств. Добавьте новое устройство или выполните сопряжение.
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <img src="{% static 'img/no-devices.png' %}" alt="Нет устройств" class="mb-3" 
+                 style="max-width: 150px; opacity: 0.5;" onerror="this.src='https://via.placeholder.com/150?text=Нет устройств'">
+            <h4>У вас пока нет устройств</h4>
+            <p class="text-muted">Добавьте свое первое устройство, нажав на кнопку выше</p>
+            <a href="{% url 'confirm_device_pairing' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-plus me-1"></i> Добавить устройство
+            </a>
+        </div>
     </div>
     {% endif %}
 </div>

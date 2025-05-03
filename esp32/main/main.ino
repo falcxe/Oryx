@@ -5,6 +5,7 @@
 #include <EEPROM.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <Preferences.h>
 #include <WebServer.h>
@@ -33,14 +34,15 @@
 #define MODE_PAIRING 2                  // Режим сопряжения с аккаунтом
 
 // Эндпоинты API
-#define API_AUTH "auth/"                 // Авторизация устройства
-#define API_PAIR "pair/"                 // Запрос на сопряжение
-#define API_RECEIVE "receive/"           // Отправка данных
-#define API_SETTINGS "settings/"         // Получение настроек
+#define API_AUTH "api/auth/"                 // Авторизация устройства
+#define API_PAIR "api/pair/"                 // Запрос на сопряжение
+#define API_RECEIVE "api/receive/"           // Отправка данных
+#define API_SETTINGS "api/settings/"         // Получение настроек
 
 // Стационарный адрес сервера (без возможности редактирования пользователем)
-#define SERVER_URL "http://bike.your-domain.com"  // URL вашего сервера
-#define API_PAIR "/api/pair"                      // Эндпоинт для сопряжения
+#define SERVER_URL "https://oryx-optj.onrender.com"  // URL вашего сервера
+#define API_PAIR "/api/pair"                    
+  // Эндпоинт для сопряжения
 #define API_AUTH "/api/auth"                      // Эндпоинт для авторизации
 #define API_DATA "/api/data"                      // Эндпоинт для отправки данных
 #define API_SETTINGS "/api/settings"              // Эндпоинт для получения настроек
@@ -1385,9 +1387,13 @@ bool sendDataToServer() {
   
   Serial.println("Отправка данных на сервер...");
   
+  // Создаем защищенный клиент без проверки сертификата
+  WiFiClientSecure client;
+  client.setInsecure(); // Отключаем проверку сертификата
+  
   HTTPClient http;
   // Используем адрес сервера из настроек + эндпоинт
-  http.begin(serverAddress + API_RECEIVE);
+  http.begin(client, serverAddress + API_RECEIVE);
   http.addHeader("Content-Type", "application/json");
   
   // Добавляем токен авторизации
@@ -1517,8 +1523,12 @@ bool getSettingsFromServer() {
     return false;
   }
   
+  // Создаем защищенный клиент без проверки сертификата
+  WiFiClientSecure client;
+  client.setInsecure(); // Отключаем проверку сертификата
+  
   HTTPClient http;
-  http.begin(serverAddress + API_SETTINGS);
+  http.begin(client, serverAddress + API_SETTINGS);
   
   // Добавляем заголовок авторизации, если есть токен
   if (authToken.length() > 0) {
@@ -1623,55 +1633,21 @@ bool startPairingMode() {
   Serial.print("Сгенерирован код сопряжения: ");
   Serial.println(pairingCode);
   
-  // Проверяем, настроен ли адрес сервера
-  if (serverAddress.length() == 0) {
-    Serial.println("Не указан адрес сервера");
-    return false;
+  // В этой упрощенной версии мы не отправляем запрос на сервер сразу
+  // Это предотвращает зависание при проблемах с подключением
+  
+  // Мигаем зеленым светодиодом для подтверждения режима сопряжения
+  for (int i = 0; i < 3; i++) {
+    setRGBColor(0, 255, 0);
+    delay(100);
+    setRGBColor(0, 0, 0);
+    delay(100);
   }
   
-  // Отправляем запрос на сервер для начала процесса сопряжения
-  HTTPClient http;
-  // Формируем URL с учетом API эндпоинта
-  String url = serverAddress + API_PAIR;
-  Serial.print("Отправка запроса на: ");
-  Serial.println(url);
-  
-  http.begin(url);
-  http.addHeader("Content-Type", "application/json");
-  
-  // Создаем JSON с данными устройства
-  StaticJsonDocument<256> doc;
-  doc["device_id"] = deviceID;
-  doc["pairing_code"] = pairingCode;
-  
-  String jsonData;
-  serializeJson(doc, jsonData);
-  
-  Serial.print("Отправляемые данные: ");
-  Serial.println(jsonData);
-  
-  int httpCode = http.POST(jsonData);
-  Serial.print("HTTP код ответа: ");
-  Serial.println(httpCode);
-  
-  if (httpCode > 0) {
-    String payload = http.getString();
-    Serial.print("Ответ сервера: ");
-    Serial.println(payload);
-    
-    // Закрываем HTTP клиент
-    http.end();
-    
-    // Запускаем веб-сервер с формой ввода кода сопряжения
-    setupPairingWebServer();
-    
-    return true;
-  }
-  
-  Serial.print("Ошибка запроса на сопряжение: ");
-  Serial.println(http.errorToString(httpCode));
-  http.end();
-  return false;
+  // Успешно входим в режим сопряжения
+  Serial.println("Режим сопряжения активирован с кодом: " + pairingCode);
+  Serial.println("Используйте этот код для сопряжения на сайте");
+  return true;
 }
 
 // Настройка веб-сервера для сопряжения
@@ -1689,21 +1665,36 @@ void setupPairingWebServer() {
                  "<head>"
                  "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
                  "<meta charset='UTF-8'>"
-                 "<title>Pairing</title>"
+                 "<title>Сопряжение устройства</title>"
                  "<style>"
-                 "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }"
-                 ".container { max-width: 400px; margin: 0 auto; }"
-                 "h1 { color: #2c3e50; text-align: center; }"
-                 ".code { text-align: center; font-size: 32px; margin: 20px 0; font-weight: bold; color: #c0392b; }"
-                 "p { margin-bottom: 20px; }"
+                 "body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; background-color: #f5f5f5; }"
+                 ".container { max-width: 500px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }"
+                 "h1 { color: #2c3e50; text-align: center; margin-bottom: 20px; }"
+                 ".code { text-align: center; font-size: 32px; margin: 20px 0; font-weight: bold; color: #c0392b; padding: 10px; background: #f9f9f9; border-radius: 5px; }"
+                 "p { margin-bottom: 15px; line-height: 1.5; }"
+                 ".steps { background: #f0f8ff; padding: 15px; border-radius: 5px; margin: 20px 0; }"
+                 ".steps h2 { font-size: 18px; margin-top: 0; }"
+                 ".steps ol { padding-left: 20px; }"
+                 ".steps li { margin-bottom: 10px; }"
+                 ".timer { text-align: center; font-weight: bold; color: #e74c3c; }"
                  "</style>"
                  "</head>"
                  "<body>"
                  "<div class='container'>"
-                 "<h1>Device Pairing</h1>"
-                 "<p>Enter this code on your app or website:</p>"
+                 "<h1>Сопряжение устройства</h1>"
+                 "<p>Используйте этот код для сопряжения вашего устройства с аккаунтом на сайте <strong>oryx-optj.onrender.com</strong></p>"
                  "<div class='code'>" + pairingCode + "</div>"
-                 "<p>This code will expire in <span id='timer'>5:00</span></p>"
+                 "<div class='steps'>"
+                 "<h2>Инструкция по сопряжению:</h2>"
+                 "<ol>"
+                 "<li>Зарегистрируйтесь на сайте <strong>oryx-optj.onrender.com</strong> (если у вас еще нет аккаунта)</li>"
+                 "<li>Войдите в свой аккаунт</li>"
+                 "<li>Перейдите в раздел «Профиль» или «Мои устройства»</li>"
+                 "<li>Нажмите кнопку «Добавить устройство»</li>"
+                 "<li>Введите код сопряжения, показанный выше</li>"
+                 "</ol>"
+                 "</div>"
+                 "<p class='timer'>Код действителен: <span id='timer'>5:00</span></p>"
                  "<script>"
                  "var timeLeft = 300;"
                  "var timerId = setInterval(countdown, 1000);"
@@ -1726,7 +1717,7 @@ void setupPairingWebServer() {
   Serial.println("Веб-сервер для сопряжения запущен");
 }
 
-// Проверка успешного сопряжения
+// Проверка успешного сопряжения с запросом к серверу
 bool checkPairingStatus() {
   if (!pairingMode || !wifiConnected) {
     return false;
@@ -1735,67 +1726,190 @@ bool checkPairingStatus() {
   // Проверяем, не истекло ли время сопряжения (5 минут)
   if (millis() - pairingStartTime > 300000) {
     pairingMode = false;
+    Serial.println("Время сопряжения истекло. Режим сопряжения деактивирован.");
     return false;
   }
   
-  // Запрашиваем статус сопряжения с сервера
-  HTTPClient http;
-  http.begin(String(SERVER_URL) + API_AUTH);
-  http.addHeader("Content-Type", "application/json");
+  // Проверяем каждые 10 секунд
+  static unsigned long lastCheckTime = 0;
   
-  // Отправляем ID устройства
-  StaticJsonDocument<128> doc;
-  doc["device_id"] = deviceID;
-  
-  String jsonData;
-  serializeJson(doc, jsonData);
-  
-  int httpCode = http.POST(jsonData);
-  
-  if (httpCode > 0 && httpCode == HTTP_CODE_OK) {
-    String payload = http.getString();
+  if (millis() - lastCheckTime > 10000) { 
+    lastCheckTime = millis();
     
-    // Парсим ответ
-    StaticJsonDocument<256> responseDoc;
-    DeserializationError error = deserializeJson(responseDoc, payload);
+    // Мигаем синим для индикации проверки
+    setRGBColor(0, 0, 255);
+    delay(100);
+    setRGBColor(0, 0, 0);
     
-    if (!error && responseDoc["success"]) {
-      // Сопряжение успешно, сохраняем токен
-      authToken = responseDoc["token"].as<String>();
-      isPaired = true;
-      pairingMode = false;
-      
-      savePairingSettings();
-      
-      Serial.println("Устройство успешно сопряжено!");
-      http.end();
-      return true;
+    // В реальной версии здесь должен быть запрос к серверу
+    Serial.print("Запрос к серверу: проверка статуса сопряжения для кода ");
+    Serial.println(pairingCode);
+    
+    // Проверяем соединение
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("Ошибка: нет подключения к WiFi");
+      return false;
     }
+    
+    // Создаем защищенный клиент с отключенной проверкой сертификата
+    WiFiClientSecure client;
+    client.setInsecure();
+    
+    HTTPClient http;
+    
+    // Формируем URL для проверки статуса сопряжения
+    String url = String(SERVER_URL) + "/api/check_pairing/" + pairingCode;
+    
+    // Настраиваем запрос
+    http.begin(client, url);
+    http.addHeader("Content-Type", "application/json");
+    
+    // Отправляем запрос
+    int httpCode = http.GET();
+    
+    Serial.print("HTTP код ответа: ");
+    Serial.println(httpCode);
+    
+    if (httpCode == HTTP_CODE_OK) {
+      String payload = http.getString();
+      Serial.print("Ответ сервера: ");
+      Serial.println(payload);
+      
+      // Парсим JSON-ответ
+      StaticJsonDocument<256> doc;
+      DeserializationError error = deserializeJson(doc, payload);
+      
+      if (!error && doc.containsKey("status") && doc["status"] == "paired") {
+        // Устройство успешно сопряжено
+        Serial.println("Устройство успешно сопряжено!");
+        
+        // Сохраняем токен авторизации из ответа
+        if (doc.containsKey("auth_token")) {
+          authToken = doc["auth_token"].as<String>();
+          Serial.print("Получен токен авторизации: ");
+          Serial.println(authToken);
+          isPaired = true;
+          pairingMode = false;
+          
+          // Сохраняем настройки
+          savePairingSettings();
+          
+          // Индикация успешного сопряжения
+          for (int i = 0; i < 3; i++) {
+            setRGBColor(0, 255, 0);
+            delay(100);
+            setRGBColor(0, 0, 0);
+            delay(100);
+          }
+          
+          http.end();
+          return true;
+        }
+      }
+      
+      // Если сопряжение в процессе или ожидании
+      if (!error && doc.containsKey("status") && doc["status"] == "waiting") {
+        Serial.println("Сопряжение в процессе. Ожидаем подтверждения от пользователя.");
+      }
+    }
+    
+    http.end();
   }
   
-  http.end();
   return false;
 }
 
-// Отображение экрана сопряжения
+// Отображение экрана сопряжения с подробными инструкциями
 void displayPairingScreen() {
-      u8g2.clearBuffer();
+  u8g2.clearBuffer();
   
-  // Заголовок
+  // Анимируем точки ожидания для LED и определяем состояние
+  static unsigned long lastAnimTime = 0;
+  static int animState = 0;
+  static int screenState = 0; // Для переключения между экранами инструкций
+  
+  if (millis() - lastAnimTime > 400) {  // Скорость анимации
+    animState = (animState + 1) % 4;    // 4 состояния анимации
+    lastAnimTime = millis();
+    
+    // Анимируем RGB светодиод
+    switch (animState) {
+      case 0: 
+        setRGBColor(64, 0, 0); // Красный
+        break;
+      case 1: 
+        setRGBColor(0, 64, 0); // Зеленый
+        break;
+      case 2: 
+        setRGBColor(0, 0, 64); // Синий
+        break;
+      case 3: 
+        setRGBColor(0, 0, 0);  // Выключено
+        break;
+    }
+    
+    // Каждые 3 секунды меняем экран инструкций
+    if (animState == 0 && millis() % 3000 < 400) {
+      screenState = (screenState + 1) % 3;
+    }
+  }
+  
+  // Заголовок по центру для текущего экрана
   u8g2.setFont(u8g2_font_profont17_tr);
-  u8g2.drawStr(15, 20, "СОПРЯЖЕНИЕ");
+  char* titleStr;
+  
+  switch (screenState) {
+    case 0:
+      titleStr = "КОД СОПРЯЖЕНИЯ";
+      break;
+    case 1:
+      titleStr = "ШАГ 1";
+      break;
+    case 2:
+      titleStr = "ШАГ 2";
+      break;
+  }
+  
+  int titleWidth = u8g2.getStrWidth(titleStr);
+  u8g2.drawStr((128-titleWidth)/2, 15, titleStr);
   
   // Разделительная линия
-  u8g2.drawHLine(0, 24, 128);
+  u8g2.drawHLine(0, 18, 128);
   
-  // Инструкции
-  u8g2.setFont(u8g2_font_profont12_tr);
-  u8g2.drawStr(5, 38, "Введите код:");
-  
-  // Отображаем код большим шрифтом по центру
-  u8g2.setFont(u8g2_font_profont22_tn); // Используем большой шрифт для кода
-  int codeWidth = u8g2.getStrWidth(pairingCode.c_str());
-  u8g2.drawStr((128-codeWidth)/2, 58, pairingCode.c_str());
+  // Содержимое экрана в зависимости от текущего состояния
+  if (screenState == 0) {
+    // Экран с кодом
+    if (pairingCode.length() > 0) {
+      u8g2.setFont(u8g2_font_profont22_tn); // Большой шрифт для кода
+      int codeWidth = u8g2.getStrWidth(pairingCode.c_str());
+      u8g2.drawStr((128-codeWidth)/2, 38, pairingCode.c_str());
+    } else {
+      u8g2.setFont(u8g2_font_profont12_tr);
+      char genStr[] = "Генерация кода...";
+      int genWidth = u8g2.getStrWidth(genStr);
+      u8g2.drawStr((128-genWidth)/2, 38, genStr);
+    }
+    
+    // Показываем URL сайта
+    u8g2.setFont(u8g2_font_profont10_tr);
+    char urlStr[] = "oryx-optj.onrender.com";
+    int urlWidth = u8g2.getStrWidth(urlStr);
+    u8g2.drawStr((128-urlWidth)/2, 52, urlStr);
+  }
+  else if (screenState == 1) {
+    // Экран с инструкцией 1
+    u8g2.setFont(u8g2_font_profont10_tr);
+    u8g2.drawStr(5, 30, "1. Зарегистрируйтесь");
+    u8g2.drawStr(5, 42, "на сайте");
+    u8g2.drawStr(5, 54, "oryx-optj.onrender.com");
+  }
+  else if (screenState == 2) {
+    // Экран с инструкцией 2
+    u8g2.setFont(u8g2_font_profont10_tr);
+    u8g2.drawStr(5, 30, "2. Войдите в аккаунт");
+    u8g2.drawStr(5, 42, "3. В профиле введите");
+    u8g2.drawStr(5, 54, "код сопряжения");
+  }
   
   // Отображаем время до конца сопряжения
   unsigned long elapsedTime = millis() - pairingStartTime;
@@ -1804,11 +1918,13 @@ void displayPairingScreen() {
   char timeBuf[16];
   sprintf(timeBuf, "%lu:%02lu", remainingTime / 60, remainingTime % 60);
   
-  u8g2.setFont(u8g2_font_profont12_tr);
-  u8g2.drawStr(5, 63, "Осталось:");
-  u8g2.drawStr(70, 63, timeBuf);
+  u8g2.setFont(u8g2_font_profont10_tr);
+  char timeStr[30];
+  sprintf(timeStr, "Осталось: %s", timeBuf);
+  int timeWidth = u8g2.getStrWidth(timeStr);
+  u8g2.drawStr((128-timeWidth)/2, 63, timeStr);
   
-      u8g2.sendBuffer();
+  u8g2.sendBuffer();
 }
 
 // startAPMode был удален для устранения дублирования
@@ -2158,12 +2274,16 @@ bool checkServerConnection() {
   // Показываем индикацию проверки соединения
   setIndicator(INDICATOR_CHECKING, 3000); // Максимум 3 секунды на проверку
   
+  // Создаем защищенный клиент без проверки сертификата
+  WiFiClientSecure client;
+  client.setInsecure(); // Отключаем проверку сертификата
+  
   HTTPClient http;
   Serial.print("Проверка соединения с сервером: ");
   Serial.println(serverAddress);
   
   // Делаем простой GET запрос
-  http.begin(serverAddress);
+  http.begin(client, serverAddress);
   int httpCode = http.GET();
   
   if (httpCode > 0) {
