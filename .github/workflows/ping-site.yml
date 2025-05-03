@@ -1,0 +1,15 @@
+name: Предотвращение засыпания сайта
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Запуск каждые 5 минут
+  workflow_dispatch:  # Позволяет запускать вручную из интерфейса GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Простой пинг сайта
+        run: |
+          curl -s -o /dev/null -w "Статус ответа: %{http_code}\n" https://oryx-optj.onrender.com
+          echo "Сайт разбужен в $(date)" 

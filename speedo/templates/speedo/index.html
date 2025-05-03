@@ -18,7 +18,7 @@
     }
     .feature-icon {
         font-size: 2.5rem;
-        color: #007bff;
+        color: white;
         margin-bottom: 1rem;
     }
     .feature-card {
@@ -27,19 +27,35 @@
         box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
         height: 100%;
         transition: transform 0.3s ease;
+        background-color: #007bff;
+        color: white;
     }
     .feature-card:hover {
         transform: translateY(-5px);
     }
     .cta-section {
-        background-color: #f8f9fa;
+        background-color: #0056b3;
         padding: 4rem 0;
         margin-top: 3rem;
         border-radius: 1rem;
+        color: white;
     }
     .btn-cta {
         padding: 0.75rem 2rem;
         font-size: 1.1rem;
+    }
+    .container h2 {
+        color: #007bff;
+    }
+    .card-title, .card-text {
+        color: white;
+    }
+    .how-it-works-card {
+        background-color: #007bff;
+        color: white;
+    }
+    .how-it-works-card h4, .how-it-works-card p {
+        color: white;
     }
 </style>
 {% endblock %}
@@ -149,7 +165,7 @@
     
     <div class="row justify-content-center">
         <div class="col-lg-10">
-            <div class="card">
+            <div class="card how-it-works-card">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-4">
                         <div class="bg-primary text-white rounded-circle p-3 me-3">1</div>
@@ -180,8 +196,8 @@
         <h2 class="mb-4">Готовы начать?</h2>
         <p class="lead mb-4">Зарегистрируйтесь сейчас и подключите ваш умный спидометр Oryx</p>
         <div class="d-flex justify-content-center gap-3">
-            <a href="{% url 'register' %}" class="btn btn-primary btn-cta">Зарегистрироваться</a>
-            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-cta">Войти в систему</a>
+            <a href="{% url 'register' %}" class="btn btn-light btn-cta">Зарегистрироваться</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-light btn-cta">Войти в систему</a>
         </div>
     </div>
 </section>

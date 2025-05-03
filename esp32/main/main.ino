@@ -1862,7 +1862,7 @@ void displayPairingScreen() {
     u8g2.setFont(u8g2_font_profont22_tn); // Large font for code
     int codeWidth = u8g2.getStrWidth(pairingCode.c_str());
     u8g2.drawStr((128-codeWidth)/2, 40, pairingCode.c_str());
-  } else {
+    } else {
     u8g2.setFont(u8g2_font_profont12_tr);
     char genStr[] = "Generating...";
     int genWidth = u8g2.getStrWidth(genStr);
