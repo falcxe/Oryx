@@ -1,4 +1,5 @@
 #include <Wire.h>
+
 #include <U8g2lib.h>
 #include <TinyGPS++.h>
 #include <HardwareSerial.h>
@@ -623,6 +624,54 @@ void setupRGBPWM() {
 }
 
 void loop() {
+  // Добавляем периодический вывод состояния устройства
+  static unsigned long lastStatusReportTime = 0;
+  if (millis() - lastStatusReportTime > 5000) { // Каждые 5 секунд выводим полный статус
+    lastStatusReportTime = millis();
+    Serial.println("============= СТАТУС УСТРОЙСТВА =============");
+    Serial.print("Режим: ");
+    switch(deviceMode) {
+      case MODE_NORMAL:
+        Serial.println("Нормальный режим");
+        break;
+      case MODE_AP_SETUP:
+        Serial.println("Режим точки доступа (настройка)");
+        break;
+      case MODE_PAIRING:
+        Serial.println("Режим сопряжения");
+        break;
+      default:
+        Serial.print("Неизвестный (");
+        Serial.print(deviceMode);
+        Serial.println(")");
+    }
+    Serial.print("Питание: ");
+    Serial.println(isPowerOn ? "ВКЛ" : "ВЫКЛ");
+    Serial.print("Текущий экран: ");
+    Serial.println(currentScreen);
+    Serial.print("WiFi подключен: ");
+    Serial.println(wifiConnected ? "ДА" : "НЕТ");
+    Serial.print("Сервер подключен: ");
+    Serial.println(serverConnected ? "ДА" : "НЕТ");
+    Serial.print("Устройство сопряжено: ");
+    Serial.println(isPaired ? "ДА" : "НЕТ");
+    if (pairingMode) {
+      Serial.print("Код сопряжения: ");
+      Serial.println(pairingCode);
+    }
+    Serial.println("Состояние переключателей:");
+    Serial.print("  POWER_SWITCH: ");
+    Serial.println(digitalRead(POWER_SWITCH) ? "HIGH" : "LOW");
+    Serial.print("  FUNC_SWITCH: ");
+    Serial.println(digitalRead(FUNC_SWITCH) ? "HIGH" : "LOW");
+    Serial.print("  WIFI_SETUP_BTN: ");
+    Serial.println(digitalRead(WIFI_SETUP_BTN) ? "HIGH" : "LOW");
+    Serial.println("=============================================");
+  }
+
+  // Обработка команд из Serial
+  processSerialCommands();
+
   // Проверяем нажатие кнопки настройки WiFi
   checkWifiSetupButton();
 
@@ -2223,35 +2272,57 @@ void checkWifiSetupButton() {
   // Чтение текущего состояния кнопки
   int currentState = digitalRead(WIFI_SETUP_BTN);
 
+  // Начало отладочного вывода - выводим состояние при каждом цикле
+  static unsigned long lastDebugTime = 0;
+  if (millis() - lastDebugTime > 1000) { // Выводим отладку каждую секунду
+    lastDebugTime = millis();
+    Serial.print("Состояние WIFI_SETUP_BTN: ");
+    Serial.print(currentState ? "HIGH" : "LOW");
+    Serial.print(", последнее состояние: ");
+    Serial.println(lastWifiSetupBtnState ? "HIGH" : "LOW");
+  }
+
   // Проверка на дребезг
   if ((millis() - lastWifiSetupBtnTime) > debounceDelay) {
     // Если состояние изменилось
     if (currentState != lastWifiSetupBtnState) {
       lastWifiSetupBtnTime = millis();
+      Serial.print("Изменение состояния кнопки: ");
+      Serial.println(currentState ? "HIGH" : "LOW");
 
       // Если кнопка нажата (LOW)
       if (currentState == LOW && lastWifiSetupBtnState == HIGH) {
         // Запоминаем время начала нажатия для определения длительного нажатия
         wifiSetupBtnPressStart = millis();
+        Serial.println("Нажатие кнопки обнаружено");
 
         // Звуковой сигнал при нажатии
         tone(BUZZER_PIN, 1500, 50);
       }
       // Если кнопка отпущена (HIGH)
       else if (currentState == HIGH && lastWifiSetupBtnState == LOW) {
+        Serial.println("Кнопка отпущена");
+
         // Если было долгое нажатие, то не выполняем действие при отпускании
         if (!wifiSetupBtnLongPress) {
           // Если устройство включено и нажатие не было длительным,
           // определяем длительность нажатия
           unsigned long pressDuration = millis() - wifiSetupBtnPressStart;
+          Serial.print("Длительность нажатия: ");
+          Serial.print(pressDuration);
+          Serial.println(" мс");
 
           if (pressDuration >= 2000) {
             // Это было долгое нажатие, но мы его пропустили (не должно происходить)
+            Serial.println("Обнаружено пропущенное долгое нажатие");
             wifiSetupBtnLongPress = false;
           } else if (isPowerOn) {
             // Если короткое нажатие и устройство включено - запускаем режим AP
+            Serial.println("Короткое нажатие - запуск режима AP");
             activateAPModeByButton();
           }
+        } else {
+          Serial.println("Кнопка отпущена после долгого нажатия - действие уже выполнено");
         }
         // Сбрасываем флаг длительного нажатия
         wifiSetupBtnLongPress = false;
@@ -2264,8 +2335,22 @@ void checkWifiSetupButton() {
   // Проверка на длительное нажатие
   if (currentState == LOW && !wifiSetupBtnLongPress) {
     // Если кнопка удерживается нажатой более 2 секунд
-    if (millis() - wifiSetupBtnPressStart >= 2000) {
+    unsigned long pressDuration = millis() - wifiSetupBtnPressStart;
+
+    // Отладочный вывод каждые 500мс во время удержания
+    static unsigned long lastPressDebugTime = 0;
+    if (pressDuration > 500 && millis() - lastPressDebugTime > 500) {
+      lastPressDebugTime = millis();
+      Serial.print("Кнопка удерживается: ");
+      Serial.print(pressDuration);
+      Serial.println(" мс");
+    }
+
+    if (pressDuration >= 2000) {
       wifiSetupBtnLongPress = true;
+      Serial.println("==========================================");
+      Serial.println("ОБНАРУЖЕНО ДОЛГОЕ НАЖАТИЕ (2+ секунды)");
+      Serial.println("==========================================");
 
       // Звуковой сигнал для подтверждения длительного нажатия
       tone(BUZZER_PIN, 2000, 100);
@@ -2273,39 +2358,55 @@ void checkWifiSetupButton() {
       tone(BUZZER_PIN, 2500, 100);
 
       // Если устройство включено, запускаем процесс сопряжения
-      if (isPowerOn && currentScreen == 2 && !isPaired && wifiConnected) {
-        Serial.println("Запуск режима сопряжения через длительное нажатие...");
+      if (isPowerOn) {
+        Serial.print("Текущий экран: ");
+        Serial.println(currentScreen);
 
-        // Генерируем случайный seed для кода сопряжения
-        randomSeed(millis() + hallPulseCount);
+        if (currentScreen == 2 && !isPaired && wifiConnected) {
+          Serial.println("Условия соблюдены: экран = 2, устройство не сопряжено, WiFi подключен");
+          Serial.println("Запуск режима сопряжения через длительное нажатие...");
 
-        // Явно создаем код сопряжения перед запуском режима
-        pairingCode = generatePairingCode();
+          // Генерируем случайный seed для кода сопряжения
+          randomSeed(millis() + hallPulseCount);
 
-        // Проверяем, сгенерирован ли код
-        if (pairingCode.length() != 6) {
-          // Если код не сгенерировался, создаем фиксированный код
-          pairingCode = "123456";
-          Serial.println("Внимание: использован резервный код 123456");
-        }
+          // Явно создаем код сопряжения перед запуском режима
+          pairingCode = generatePairingCode();
 
-        Serial.print("Код сопряжения создан: ");
-        Serial.println(pairingCode);
+          // Проверяем, сгенерирован ли код
+          if (pairingCode.length() != 6) {
+            // Если код не сгенерировался, создаем фиксированный код
+            pairingCode = "123456";
+            Serial.println("Внимание: использован резервный код 123456");
+          }
 
-        // Запускаем режим сопряжения
-        if (startPairingMode()) {
-          // Переходим в режим сопряжения
-          deviceMode = MODE_PAIRING;
-          Serial.println("Устройство перешло в режим сопряжения");
-          Serial.print("Код сопряжения: ");
+          Serial.print("Код сопряжения создан: ");
           Serial.println(pairingCode);
 
-          // Принудительно показываем экран с кодом
-          displayPairingScreen();
+          // Запускаем режим сопряжения
+          if (startPairingMode()) {
+            // Переходим в режим сопряжения
+            deviceMode = MODE_PAIRING;
+            Serial.println("Устройство перешло в режим сопряжения");
+            Serial.print("Код сопряжения: ");
+            Serial.println(pairingCode);
+
+            // Принудительно показываем экран с кодом
+            displayPairingScreen();
+          } else {
+            Serial.println("Не удалось запустить режим сопряжения");
+            tone(BUZZER_PIN, 500, 300); // Сигнал ошибки
+          }
         } else {
-          Serial.println("Не удалось запустить режим сопряжения");
-          tone(BUZZER_PIN, 500, 300); // Сигнал ошибки
+          Serial.println("Условия для запуска режима сопряжения не соблюдены:");
+          Serial.print("Текущий экран = ");
+          Serial.print(currentScreen);
+          Serial.print(", Сопряжено = ");
+          Serial.print(isPaired ? "ДА" : "НЕТ");
+          Serial.print(", WiFi подключен = ");
+          Serial.println(wifiConnected ? "ДА" : "НЕТ");
         }
+      } else {
+        Serial.println("Устройство выключено, долгое нажатие игнорируется");
       }
     }
   }
@@ -2406,4 +2507,75 @@ bool checkServerConnection() {
   // Индикация ошибки
   setIndicator(INDICATOR_ERROR, 1000);
   return false;
+}
+
+// Обработка команд из последовательного порта
+void processSerialCommands() {
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    command.trim();  // Удаляем пробелы и переводы строк
+
+    Serial.print("Получена команда: ");
+    Serial.println(command);
+
+    if (command == "pair" || command == "PAIR") {
+      Serial.println("Ручной запуск режима сопряжения через Serial");
+
+      // Генерируем код сопряжения
+      pairingCode = generatePairingCode();
+
+      // Проверяем, сгенерирован ли код
+      if (pairingCode.length() != 6) {
+        // Если код не сгенерировался, используем код по умолчанию
+        pairingCode = "123456";
+        Serial.println("Использован код по умолчанию: 123456");
+      }
+
+      Serial.print("Сгенерирован код сопряжения: ");
+      Serial.println(pairingCode);
+
+      // Запускаем режим сопряжения
+      if (startPairingMode()) {
+        deviceMode = MODE_PAIRING;
+        Serial.println("Устройство переведено в режим сопряжения");
+      } else {
+        Serial.println("Ошибка запуска режима сопряжения");
+      }
+    }
+    else if (command == "status" || command == "STATUS") {
+      // Вывод текущего статуса устройства
+      Serial.println("============= СТАТУС УСТРОЙСТВА =============");
+      Serial.print("Режим: ");
+      switch(deviceMode) {
+        case MODE_NORMAL:
+          Serial.println("Нормальный режим");
+          break;
+        case MODE_AP_SETUP:
+          Serial.println("Режим точки доступа (настройка)");
+          break;
+        case MODE_PAIRING:
+          Serial.println("Режим сопряжения");
+          break;
+        default:
+          Serial.print("Неизвестный (");
+          Serial.print(deviceMode);
+          Serial.println(")");
+      }
+      Serial.print("Питание: ");
+      Serial.println(isPowerOn ? "ВКЛ" : "ВЫКЛ");
+      Serial.print("Текущий экран: ");
+      Serial.println(currentScreen);
+      Serial.print("WiFi подключен: ");
+      Serial.println(wifiConnected ? "ДА" : "НЕТ");
+      Serial.print("Сервер подключен: ");
+      Serial.println(serverConnected ? "ДА" : "НЕТ");
+      Serial.print("Устройство сопряжено: ");
+      Serial.println(isPaired ? "ДА" : "НЕТ");
+      if (pairingMode) {
+        Serial.print("Код сопряжения: ");
+        Serial.println(pairingCode);
+      }
+      Serial.println("=============================================");
+    }
+  }
 }

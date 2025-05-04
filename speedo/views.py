@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
@@ -47,19 +47,19 @@ def receive_data(request):
     """API эндпоинт для приема данных от ESP32"""
     # Аутентификация устройства
     device = authenticate_device(request)
-    
+
     if not device:
         return JsonResponse({
             'success': False,
             'message': 'Неавторизованное устройство'
         }, status=401)
-    
+
     try:
         data = json.loads(request.body)
 
         # Добавляем device_id из аутентифицированного устройства
         data['device_id'] = device.device_id
-        
+
         # Обновляем временное хранилище
         for key, value in data.items():
             if key in latest_data:
@@ -72,7 +72,7 @@ def receive_data(request):
 
         # Текущая временная метка
         latest_data['timestamp'] = datetime.now().isoformat()
-        
+
         # Сохраняем данные в БД (опционально)
         # speedometer_data = SpeedometerData(...)
         # speedometer_data.save()
@@ -121,12 +121,12 @@ def dashboard(request):
     """Дашборд для отображения данных с устройства"""
     # Проверяем, есть ли у пользователя устройства
     devices = DeviceRegistration.objects.filter(user=request.user)
-    
+
     if not devices.exists():
         # Если устройств нет, предлагаем добавить устройство
         messages.info(request, 'У вас пока нет добавленных устройств. Пожалуйста, добавьте устройство, чтобы начать работу.')
         return redirect('device_list')
-    
+
     last_data = SpeedometerData.objects.last()
     return render(request, 'speedo/dashboard.html', {'data': last_data, 'devices': devices})
 
@@ -181,7 +181,7 @@ def device_settings(request):
             data = json.loads(request.body)
             # Здесь можно добавить код для сохранения полученных настроек
             # в базу данных или другое хранилище
-            
+
             return JsonResponse({
                 'success': True,
                 'message': 'Настройки обновлены'
@@ -206,12 +206,12 @@ def add_device(request):
     if request.method == 'POST':
         device_id = request.POST.get('device_id')
         device_name = request.POST.get('device_name', '')
-        
+
         # Проверка существования устройства с таким ID
         if DeviceRegistration.objects.filter(device_id=device_id).exists():
             messages.error(request, f'Устройство с ID {device_id} уже зарегистрировано')
             return redirect('device_list')
-        
+
         # Создание новой записи устройства
         device = DeviceRegistration(
             user=request.user,
@@ -219,46 +219,46 @@ def add_device(request):
             device_name=device_name
         )
         device.save()
-        
+
         messages.success(request, f'Устройство {device_name or device_id} успешно добавлено')
         return redirect('device_list')
-    
+
     return render(request, 'speedo/add_device.html')
 
 @login_required
 def device_details(request, device_id):
     """Страница просмотра деталей устройства"""
     device = get_object_or_404(DeviceRegistration, id=device_id, user=request.user)
-    
+
     if request.method == 'POST':
         action = request.POST.get('action')
-        
+
         if action == 'rename':
             device.device_name = request.POST.get('device_name', '')
             device.save()
             messages.success(request, f'Имя устройства изменено на {device.device_name}')
-        
+
         elif action == 'regenerate_token':
             device.token = uuid.uuid4()
             device.save()
             messages.success(request, 'Токен устройства обновлен')
-        
+
         elif action == 'toggle_active':
             device.is_active = not device.is_active
             device.save()
             status = 'активировано' if device.is_active else 'деактивировано'
             messages.success(request, f'Устройство {status}')
-        
+
         elif action == 'delete':
             device.delete()
             messages.success(request, 'Устройство удалено')
             return redirect('device_list')
-        
+
         return redirect('device_details', device_id=device.id)
-    
+
     # Получаем последние данные с устройства
     last_data = SpeedometerData.objects.filter(device_id=device.device_id).order_by('-timestamp').first()
-    
+
     return render(request, 'speedo/device_details.html', {
         'device': device,
         'last_data': last_data
@@ -272,40 +272,40 @@ def device_pair(request):
             data = json.loads(request.body)
             device_id = data.get('device_id')
             pairing_code = data.get('pairing_code')
-            
+
             if not device_id or not pairing_code:
                 return JsonResponse({
                     'success': False,
                     'message': 'Не указан device_id или pairing_code'
                 }, status=400)
-            
+
             # Проверяем, не используется ли код уже
             if PairingCode.objects.filter(code=pairing_code).exists():
                 return JsonResponse({
                     'success': False,
                     'message': 'Этот код уже используется. Пожалуйста, сгенерируйте новый.'
                 }, status=400)
-            
+
             # Создаем запись с кодом сопряжения
             pairing = PairingCode.create_code(
                 device_id=device_id,
                 code=pairing_code,
                 expires_in_minutes=5
             )
-            
+
             return JsonResponse({
                 'success': True,
                 'message': 'Устройство готово к сопряжению',
                 'pairing_code': pairing_code,
                 'expires_in': 300  # Код действителен 5 минут
             })
-            
+
         except Exception as e:
             return JsonResponse({
                 'success': False,
                 'message': f'Ошибка: {str(e)}'
             }, status=400)
-    
+
     return JsonResponse({
         'success': False,
         'message': 'Метод не поддерживается'
@@ -316,31 +316,31 @@ def check_pairing_status(request, code):
     """API для проверки статуса сопряжения по коду"""
     try:
         pairing = get_object_or_404(PairingCode, code=code)
-        
+
         # Если код уже использован
         if pairing.is_paired:
             # Находим устройство, которое было сопряжено с этим кодом
             device = DeviceRegistration.objects.get(device_id=pairing.device_id)
-            
+
             return JsonResponse({
                 'status': 'paired',
                 'message': 'Устройство успешно сопряжено',
                 'auth_token': str(device.token)
             })
-        
+
         # Если срок действия кода истек
         if not pairing.is_valid():
             return JsonResponse({
                 'status': 'expired',
                 'message': 'Срок действия кода истек'
             }, status=400)
-        
+
         # Код действителен, но ещё не использован
         return JsonResponse({
             'status': 'waiting',
             'message': 'Ожидание подтверждения пользователем'
         })
-    
+
     except Exception as e:
         return JsonResponse({
             'status': 'error',
@@ -350,33 +350,37 @@ def check_pairing_status(request, code):
 @login_required
 def confirm_device_pairing(request):
     """Страница для ввода кода сопряжения и привязки устройства к аккаунту"""
+    # Проверяем, что URL заканчивается на слеш, иначе перенаправляем
+    if not request.path.endswith('/'):
+        return HttpResponseRedirect(request.path + '/')
+
     if request.method == 'POST':
         pairing_code = request.POST.get('pairing_code')
         device_name = request.POST.get('device_name', '')
-        
+
         # Проверяем код сопряжения
         try:
             pairing = PairingCode.objects.get(code=pairing_code)
-            
+
             # Проверяем, не истек ли срок действия кода
             if not pairing.is_valid():
                 messages.error(request, 'Срок действия кода истек. Пожалуйста, сгенерируйте новый код на устройстве.')
                 return redirect('confirm_device_pairing')
-            
+
             # Проверяем, не существует ли уже устройство с таким ID
             if DeviceRegistration.objects.filter(device_id=pairing.device_id).exists():
                 device = DeviceRegistration.objects.get(device_id=pairing.device_id)
-                
+
                 # Если устройство принадлежит другому пользователю
                 if device.user != request.user:
                     messages.error(request, 'Это устройство уже зарегистрировано другим пользователем.')
                     return redirect('confirm_device_pairing')
-                
+
                 # Если устройство принадлежит текущему пользователю, обновляем его данные
                 device.device_name = device_name or device.device_name
                 device.is_active = True
                 device.save()
-                
+
                 messages.success(request, f'Устройство {device.device_name or device.device_id} успешно обновлено.')
             else:
                 # Создаем новое устройство
@@ -386,31 +390,31 @@ def confirm_device_pairing(request):
                     device_name=device_name
                 )
                 device.save()
-                
+
                 messages.success(request, f'Устройство {device_name or pairing.device_id} успешно сопряжено')
-            
+
             # Отмечаем код как использованный
             pairing.is_paired = True
             pairing.paired_by = request.user
             pairing.save()
-            
+
             return redirect('device_list')
-        
+
         except PairingCode.DoesNotExist:
             messages.error(request, 'Неверный код сопряжения. Пожалуйста, проверьте код и попробуйте снова.')
-    
+
     return render(request, 'speedo/confirm_pairing.html')
 
 # Аутентификация устройства и проверка токена
 def authenticate_device(request):
     """Проверяет токен в заголовке запроса и возвращает объект устройства"""
     auth_header = request.headers.get('Authorization', '')
-    
+
     if not auth_header.startswith('Bearer '):
         return None
-    
+
     token = auth_header.split(' ')[1]
-    
+
     try:
         device = DeviceRegistration.objects.get(token=token, is_active=True)
         # Обновляем время последнего подключения
@@ -427,13 +431,13 @@ def api_auth(request):
         try:
             data = json.loads(request.body)
             device_id = data.get('device_id')
-            
+
             if not device_id:
                 return JsonResponse({
                     'success': False,
                     'message': 'Не указан device_id'
                 }, status=400)
-            
+
             try:
                 device = DeviceRegistration.objects.get(device_id=device_id, is_active=True)
                 return JsonResponse({
@@ -446,13 +450,13 @@ def api_auth(request):
                     'success': False,
                     'message': 'Устройство не найдено или не активно'
                 }, status=404)
-            
+
         except Exception as e:
             return JsonResponse({
                 'success': False,
                 'message': f'Ошибка: {str(e)}'
             }, status=400)
-    
+
     return JsonResponse({
         'success': False,
         'message': 'Метод не поддерживается'
@@ -465,7 +469,7 @@ def home(request):
     # Если пользователь уже авторизован, перенаправляем на дашборд
     if request.user.is_authenticated:
         return redirect('dashboard')
-    
+
     # Показываем страницу с описанием продукта и ссылками на регистрацию/вход
     return render(request, 'speedo/index.html')
 
@@ -474,13 +478,13 @@ def login_view(request):
     # Если пользователь уже авторизован, перенаправляем на дашборд
     if request.user.is_authenticated:
         return redirect('dashboard')
-    
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-        
+
         user = authenticate(request, username=username, password=password)
-        
+
         if user is not None:
             login(request, user)
             # Перенаправляем на дашборд после успешного входа
@@ -488,7 +492,7 @@ def login_view(request):
         else:
             # Если аутентификация не удалась, показываем сообщение об ошибке
             messages.error(request, 'Неверное имя пользователя или пароль')
-    
+
     return render(request, 'speedo/login.html')
 
 def register_view(request):
@@ -496,51 +500,51 @@ def register_view(request):
     # Если пользователь уже авторизован, перенаправляем на дашборд
     if request.user.is_authenticated:
         return redirect('dashboard')
-        
+
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
         password1 = request.POST.get('password1')
         password2 = request.POST.get('password2')
-        
+
         # Проверка совпадения паролей
         if password1 != password2:
             messages.error(request, 'Пароли не совпадают')
             return redirect('register')
-        
+
         # Проверка уникальности имени пользователя
         if User.objects.filter(username=username).exists():
             messages.error(request, 'Пользователь с таким именем уже существует')
             return redirect('register')
-        
+
         # Проверка уникальности email
         if User.objects.filter(email=email).exists():
             messages.error(request, 'Пользователь с таким email уже существует')
             return redirect('register')
-        
+
         # Проверка сложности пароля
         if len(password1) < 8:
             messages.error(request, 'Пароль должен содержать не менее 8 символов')
             return redirect('register')
-        
+
         # Создаем нового пользователя
         try:
             user = User.objects.create_user(username=username, email=email, password=password1)
-            
+
             # Автоматически входим в систему
             login(request, user)
-            
+
             # Перенаправляем на дашборд
             return redirect('dashboard')
         except Exception as e:
             messages.error(request, f'Ошибка при создании пользователя: {str(e)}')
-    
+
     return render(request, 'speedo/register.html')
 
 # Контекстный процессор для передачи устройств в шаблоны
 def user_devices_processor(request):
     from speedo.models import DeviceRegistration
-    
+
     if request.user.is_authenticated:
         user_devices = DeviceRegistration.objects.filter(user=request.user).order_by('-is_active', '-last_connected')
         return {'user_devices': user_devices}
