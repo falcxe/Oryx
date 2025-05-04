@@ -1,4 +1,5 @@
 {% extends 'speedo/base.html' %}
+
 {% block header_extras %}
     {% if data %}
     <div class="last-update">
@@ -7,6 +8,7 @@
     </div>
     {% endif %}
 {% endblock %}
+
 {% block content %}
 <div class="dashboard-grid">
     <!-- Текущая скорость -->
@@ -148,7 +150,7 @@
                 </div>
                 <div class="sensor-item">
                     <span class="sensor-label">RGB LED</span>
-                    <span class="sensor-status" style="color:{{ data.rgb_led }}">
+                    <span class="sensor-status" style="color:#3498db">
                         <i class="fas fa-lightbulb"></i> {{ data.rgb_led }}
                     </span>
                 </div>

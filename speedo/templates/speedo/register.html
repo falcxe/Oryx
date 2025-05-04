@@ -4,36 +4,6 @@
 {% block title %}Регистрация | Oryx Smart Speedometer{% endblock %}
 
 {% block extra_css %}
-<style>
-    .register-container {
-        max-width: 550px;
-        margin: 0 auto;
-    }
-    .register-card {
-        border-radius: 1rem;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    }
-    .register-header {
-        border-radius: 1rem 1rem 0 0;
-    }
-    .register-footer {
-        background-color: #f8f9fa;
-        border-radius: 0 0 1rem 1rem;
-        padding: 1rem;
-    }
-    .brand-logo {
-        max-width: 120px;
-        margin-bottom: 1.5rem;
-    }
-    .password-requirements {
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
-    .password-requirements ul {
-        padding-left: 1.2rem;
-        margin-bottom: 0;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -41,74 +11,72 @@
     <div class="row">
         <div class="col-12 register-container">
             <div class="text-center mb-4">
-                <img src="{% static 'img/logo.png' %}" alt="Oryx" class="brand-logo" onerror="this.src='https://via.placeholder.com/120x60?text=ORYX'">
+                <img src="{% static 'img/logo.png' %}" alt="Oryx" class="brand-logo">
                 <h2 class="mb-4">Умный спидометр</h2>
             </div>
-            
+
             <div class="card register-card">
                 <div class="card-header bg-primary text-white text-center register-header">
-                    <h4 class="my-2">Регистрация нового аккаунта</h4>
+                    <h4 class="my-2">Создание аккаунта</h4>
                 </div>
-                
+
                 <div class="card-body p-4">
-                    {% if messages %}
+                    {% if form.errors %}
                     <div class="alert alert-danger">
-                        {% for message in messages %}
-                            {{ message }}
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                {{ field.label }}: {{ error }}
+                            {% endfor %}
                         {% endfor %}
                     </div>
                     {% endif %}
-                    
-                    <p class="mb-4">Создайте аккаунт для управления вашим умным спидометром Oryx</p>
-                    
+
                     <form method="post" action="{% url 'register' %}">
                         {% csrf_token %}
-                        
+
                         <div class="form-group mb-3">
-                            <label for="username" class="form-label">Имя пользователя</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                            <div class="form-text">Имя пользователя должно быть уникальным</div>
+                            <label for="id_username" class="form-label">Имя пользователя</label>
+                            <input type="text" class="form-control" id="id_username" name="username" required>
                         </div>
-                        
+
                         <div class="form-group mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
-                            <div class="form-text">Мы никогда не будем делиться вашим email с кем-либо еще</div>
+                            <label for="id_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="id_email" name="email" required>
                         </div>
-                        
+
                         <div class="form-group mb-3">
-                            <label for="password1" class="form-label">Пароль</label>
-                            <input type="password" class="form-control" id="password1" name="password1" required>
+                            <label for="id_password1" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="id_password1" name="password1" required>
                             <div class="password-requirements mt-2">
-                                <p class="mb-1">Пароль должен соответствовать следующим требованиям:</p>
+                                <p class="mb-1">Требования к паролю:</p>
                                 <ul>
-                                    <li>Содержать минимум 8 символов</li>
-                                    <li>Не должен быть слишком простым</li>
-                                    <li>Не должен состоять только из цифр</li>
+                                    <li>Минимум 8 символов</li>
+                                    <li>Не может быть простым или распространенным</li>
+                                    <li>Не может состоять только из цифр</li>
                                 </ul>
                             </div>
                         </div>
-                        
+
                         <div class="form-group mb-4">
-                            <label for="password2" class="form-label">Подтверждение пароля</label>
-                            <input type="password" class="form-control" id="password2" name="password2" required>
+                            <label for="id_password2" class="form-label">Подтверждение пароля</label>
+                            <input type="password" class="form-control" id="id_password2" name="password2" required>
                         </div>
-                        
+
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">Зарегистрироваться</button>
                         </div>
                     </form>
                 </div>
-                
+
                 <div class="register-footer text-center">
                     <p class="mb-0">Уже есть аккаунт? <a href="{% url 'login' %}" class="text-primary">Войти</a></p>
                 </div>
             </div>
-            
-            <div class="text-center mt-4 text-muted">
-                <p>Oryx Smart Speedometer &copy; 2023</p>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'home' %}" class="text-decoration-none">Вернуться на главную</a>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

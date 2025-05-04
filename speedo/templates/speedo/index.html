@@ -1,64 +1,7 @@
 {% extends 'speedo/base.html' %}
 {% load static %}
 
-{% block title %}Oryx Smart Speedometer - умный велосипедный компьютер{% endblock %}
-
-{% block extra_css %}
-<style>
-    .hero-section {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        color: white;
-        padding: 5rem 0;
-        margin-bottom: 3rem;
-    }
-    .hero-image {
-        max-width: 100%;
-        border-radius: 1rem;
-        box-shadow: 0 1rem 3rem rgba(0,0,0,0.3);
-    }
-    .feature-icon {
-        font-size: 2.5rem;
-        color: white;
-        margin-bottom: 1rem;
-    }
-    .feature-card {
-        border: none;
-        border-radius: 1rem;
-        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
-        height: 100%;
-        transition: transform 0.3s ease;
-        background-color: #007bff;
-        color: white;
-    }
-    .feature-card:hover {
-        transform: translateY(-5px);
-    }
-    .cta-section {
-        background-color: #0056b3;
-        padding: 4rem 0;
-        margin-top: 3rem;
-        border-radius: 1rem;
-        color: white;
-    }
-    .btn-cta {
-        padding: 0.75rem 2rem;
-        font-size: 1.1rem;
-    }
-    .container h2 {
-        color: #007bff;
-    }
-    .card-title, .card-text {
-        color: white;
-    }
-    .how-it-works-card {
-        background-color: #007bff;
-        color: white;
-    }
-    .how-it-works-card h4, .how-it-works-card p {
-        color: white;
-    }
-</style>
-{% endblock %}
+{% block title %}Oryx Smart Speedometer{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
@@ -74,116 +17,92 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <img src="{% static 'img/speedometer.jpg' %}" alt="Умный велосипедный спидометр" class="hero-image" onerror="this.src='https://via.placeholder.com/600x400?text=Умный+велосипедный+спидометр'">
+                <img src="https://plus.unsplash.com/premium_photo-1677838847729-bf3b29628338?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDV8fGJpY3ljbGV8ZW58MHx8MHx8fDA%3D" class="hero-image" alt="Спидометр">
             </div>
         </div>
     </div>
 </section>
 
 <!-- Features Section -->
-<section class="container mb-5">
-    <h2 class="text-center mb-5">Возможности устройства</h2>
-    
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card feature-card p-4">
-                <div class="text-center feature-icon">
-                    <i class="fas fa-tachometer-alt"></i>
-                </div>
-                <div class="card-body text-center">
-                    <h4 class="card-title">Точное измерение скорости</h4>
-                    <p class="card-text">Датчик Холла обеспечивает высокоточное измерение скорости движения и пройденного расстояния.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card feature-card p-4">
-                <div class="text-center feature-icon">
-                    <i class="fas fa-map-marked-alt"></i>
-                </div>
-                <div class="card-body text-center">
-                    <h4 class="card-title">GPS-трекинг</h4>
-                    <p class="card-text">Встроенный GPS-модуль позволяет отслеживать ваши маршруты и записывать их для последующего анализа.</p>
+<section class="py-5">
+    <div class="container mb-5">
+        <h2 class="text-center mb-5">Возможности устройства</h2>
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-md-4">
+                <div class="card feature-card text-center h-100 p-4">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
+                        <h4 class="card-title">Точное измерение скорости</h4>
+                        <p class="card-text">Магнитный датчик Холла обеспечивает точное измерение скорости в реальном времени</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card feature-card p-4">
-                <div class="text-center feature-icon">
-                    <i class="fas fa-wifi"></i>
-                </div>
-                <div class="card-body text-center">
-                    <h4 class="card-title">Беспроводная синхронизация</h4>
-                    <p class="card-text">Подключение к WiFi позволяет автоматически синхронизировать данные с вашим личным кабинетом.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card feature-card p-4">
-                <div class="text-center feature-icon">
-                    <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="card-body text-center">
-                    <h4 class="card-title">Статистика и аналитика</h4>
-                    <p class="card-text">Анализируйте данные о ваших поездках, средней скорости и пройденном расстоянии на удобной панели управления.</p>
+            
+            <!-- Feature 2 -->
+            <div class="col-md-4">
+                <div class="card feature-card text-center h-100 p-4">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-map-marked-alt"></i>
+                        </div>
+                        <h4 class="card-title">GPS-трекинг маршрута</h4>
+                        <p class="card-text">Встроенный GPS модуль отслеживает ваш маршрут, высоту и координаты</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card feature-card p-4">
-                <div class="text-center feature-icon">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
-                <div class="card-body text-center">
-                    <h4 class="card-title">Удобный веб-доступ</h4>
-                    <p class="card-text">Просматривайте данные с любого устройства через веб-браузер без необходимости устанавливать приложение.</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card feature-card p-4">
-                <div class="text-center feature-icon">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <div class="card-body text-center">
-                    <h4 class="card-title">Безопасность</h4>
-                    <p class="card-text">Ваши данные надежно защищены и доступны только вам через безопасный протокол HTTPS.</p>
+            
+            <!-- Feature 3 -->
+            <div class="col-md-4">
+                <div class="card feature-card text-center h-100 p-4">
+                    <div class="card-body">
+                        <div class="feature-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h4 class="card-title">Синхронизация данных</h4>
+                        <p class="card-text">Все данные автоматически синхронизируются с вашим личным кабинетом</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- How It Works Section -->
-<section class="container mb-5">
-    <h2 class="text-center mb-5">Как это работает</h2>
-    
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card how-it-works-card">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="bg-primary text-white rounded-circle p-3 me-3">1</div>
-                        <h4 class="mb-0">Зарегистрируйтесь на платформе</h4>
+<!-- How it Works Section -->
+<section class="py-5 bg-light">
+    <div class="container mb-5">
+        <h2 class="text-center mb-5">Как это работает</h2>
+        
+        <div class="row equal-height-cards">
+            <div class="col-lg-4 mb-4">
+                <div class="how-it-works-card p-4">
+                    <div class="how-it-works-icon">
+                        <i class="fas fa-bicycle"></i>
                     </div>
-                    <p class="ms-5 ps-2 mb-4">Создайте аккаунт на нашем веб-сайте всего за несколько минут.</p>
-                    
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="bg-primary text-white rounded-circle p-3 me-3">2</div>
-                        <h4 class="mb-0">Подключите ваш спидометр</h4>
+                    <h4 class="step-title">1. Установите устройство</h4>
+                    <p class="step-description">Закрепите устройство на руле велосипеда и установите магнит на спицу колеса</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4">
+                <div class="how-it-works-card p-4">
+                    <div class="how-it-works-icon">
+                        <i class="fas fa-power-off"></i>
                     </div>
-                    <p class="ms-5 ps-2 mb-4">Переведите устройство в режим сопряжения и следуйте инструкциям в личном кабинете для подключения.</p>
-                    
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="bg-primary text-white rounded-circle p-3 me-3">3</div>
-                        <h4 class="mb-0">Начните пользоваться</h4>
+                    <h4 class="step-title">2. Включите и подключите</h4>
+                    <p class="step-description">Включите устройство переключателем и подключите к своему аккаунту через приложение</p>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 mb-4">
+                <div class="how-it-works-card p-4">
+                    <div class="how-it-works-icon">
+                        <i class="fas fa-chart-line"></i>
                     </div>
-                    <p class="ms-5 ps-2">Установите спидометр на ваш велосипед, включите его, и все данные будут автоматически синхронизироваться с вашим аккаунтом.</p>
+                    <h4 class="step-title">3. Наслаждайтесь поездкой</h4>
+                    <p class="step-description">Отслеживайте данные на дисплее в реальном времени и анализируйте статистику после поездки</p>
                 </div>
             </div>
         </div>
@@ -191,13 +110,12 @@
 </section>
 
 <!-- CTA Section -->
-<section class="cta-section">
-    <div class="container text-center">
-        <h2 class="mb-4">Готовы начать?</h2>
-        <p class="lead mb-4">Зарегистрируйтесь сейчас и подключите ваш умный спидометр Oryx</p>
-        <div class="d-flex justify-content-center gap-3">
-            <a href="{% url 'register' %}" class="btn btn-light btn-cta">Зарегистрироваться</a>
-            <a href="{% url 'login' %}" class="btn btn-outline-light btn-cta">Войти в систему</a>
+<section class="py-5">
+    <div class="container">
+        <div class="cta-section text-center">
+            <h2 class="mb-4">Готовы превратить свой велосипед в умное устройство?</h2>
+            <p class="lead mb-4">Регистрируйтесь сейчас и начните отслеживать свои велосипедные маршруты</p>
+            <a href="{% url 'register' %}" class="btn btn-light btn-lg">Начать бесплатно</a>
         </div>
     </div>
 </section>

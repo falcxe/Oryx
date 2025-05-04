@@ -536,3 +536,12 @@ def register_view(request):
             messages.error(request, f'Ошибка при создании пользователя: {str(e)}')
     
     return render(request, 'speedo/register.html')
+
+# Контекстный процессор для передачи устройств в шаблоны
+def user_devices_processor(request):
+    from speedo.models import DeviceRegistration
+    
+    if request.user.is_authenticated:
+        user_devices = DeviceRegistration.objects.filter(user=request.user).order_by('-is_active', '-last_connected')
+        return {'user_devices': user_devices}
+    return {'user_devices': []}

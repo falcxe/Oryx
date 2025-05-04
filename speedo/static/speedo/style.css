@@ -1,22 +1,24 @@
 :root {
-    --primary-color: #7659ff;
-    --accent-color: #7c4dff;
-    --success-color: #2ebd59;
-    --danger-color: #ff5252;
-    --info-color: #3a86ff;
+    --primary-color: #3498db;
+    --accent-color: #3498db;
+    --success-color: #2ecc71;
+    --danger-color: #e74c3c;
+    --info-color: #1abc9c;
     --bg-dark: #121212;
-    --bg-darker: #0a0a0a;
+    --bg-darker: #121212;
     --card-bg: #1e1e1e;
-    --card-border: #2a2a2a;
-    --text-light: #f5f5f5;
+    --card-border: #333333;
+    --text-light: #e0e0e0;
     --text-secondary: #a0a0a0;
-    --text-muted: #6c757d;
+    --text-muted: #777777;
     --sidebar-width: 250px;
     --header-height: 80px;
-    --history-color: #9c27b0;
+    --history-color: #3498db;
     --transition: none;
 }
-
+.card-title, .card-text {
+    color: var(--text-light) !important;
+}
 * {
     margin: 0;
     padding: 0;
@@ -48,6 +50,7 @@ body {
     display: flex;
     flex-direction: column;
     transition: var(--transition);
+    height: 100vh;
 }
 
 /* Logo */
@@ -126,19 +129,20 @@ body {
 }
 
 .nav-link:hover {
-    background-color: rgba(124, 77, 255, 0.1);
+    background-color: rgba(80, 109, 133, 0.1);
     color: var(--text-light);
 }
 
 .nav-link.active {
-    background-color: rgba(124, 77, 255, 0.15);
-    color: var(--accent-color);
+    background-color: rgba(52, 152, 219, 0.15);
+    color: #3498db !important;
 }
 
 /* История цвет */
+.nav-link[href="/history/"].active,
 .nav-link[href="/routes/"].active {
-    background-color: rgba(156, 39, 176, 0.15);
-    color: var(--history-color);
+    background-color: rgba(52, 152, 219, 0.15);
+    color: #3498db !important;
 }
 
 .nav-link i {
@@ -200,7 +204,7 @@ body {
     border-radius: 8px;
     border: 1px solid var(--card-border);
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     transition: none;
 }
 
@@ -211,6 +215,7 @@ body {
 
 .card-body {
     padding: 1.5rem;
+    color: var(--text-light);
 }
 
 /* Speed Card (accent) */
@@ -218,7 +223,7 @@ body {
     grid-column: span 1;
     grid-row: span 1;
     border-color: var(--accent-color);
-    background-color: rgba(124, 77, 255, 0.15);
+    background-color: rgba(52, 152, 219, 0.15);
 }
 
 /* GPS Card */
@@ -432,7 +437,7 @@ body {
 }
 
 .text-muted {
-    color: var(--text-light) !important;
+    color: var(--text-secondary) !important;
 }
 
 .page-title {
@@ -687,7 +692,13 @@ body {
 
 .form-label {
     color: var(--text-light);
-    margin-bottom: 0.3rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
 }
 
 /* Стили для страницы истории */
@@ -942,8 +953,8 @@ body {
 }
 
 .page-item.active .page-link {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
+    background-color: #3498db;
+    border-color: #3498db;
     color: white;
 }
 
@@ -1054,9 +1065,9 @@ body {
 }
 
 .trip-chart-container .nav-link.active {
-    color: var(--accent-color);
+    color: #3498db;
     background-color: transparent;
-    border-bottom: 2px solid var(--accent-color);
+    border-bottom: 2px solid #3498db;
 }
 
 .chart-placeholder {
@@ -1097,12 +1108,12 @@ body {
 }
 
 .trip-modal .btn-outline-primary {
-    color: var(--accent-color);
-    border-color: var(--accent-color);
+    color: #3498db;
+    border-color: #3498db;
 }
 
 .trip-modal .btn-outline-primary:hover {
-    background-color: var(--accent-color);
+    background-color: #3498db;
     color: white;
 }
 
@@ -1114,4 +1125,798 @@ body {
 .trip-modal .btn-outline-danger:hover {
     background-color: #dc3545;
     color: white;
+}
+
+.ml-2 {
+    margin-left: 10px;
+}
+
+/* Стиль для изображения отсутствия устройств */
+.no-devices-image {
+    max-width: 150px;
+    opacity: 0.5;
+}
+
+/* Стили для hero-section */
+.hero-section {
+    background: #121212;
+    color: white;
+    padding: 5rem 0;
+    margin-bottom: 3rem;
+}
+
+.hero-image {
+    max-width: 100%;
+    display: block;
+    float: right;
+    object-fit: cover;
+    height: 230px;
+    object-position: center top;
+    border-radius: 10px !important;
+    overflow: hidden;
+    transform: translateY(-5%);
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        background-image: url('https://plus.unsplash.com/premium_photo-1677838847729-bf3b29628338?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDV8fGJpY3ljbGV8ZW58MHx8MHx8fDA%3D');
+        background-size: cover;
+        background-position: center top;
+        background-repeat: no-repeat;
+        position: relative;
+        min-height: 350px;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+    }
+    
+    .hero-section .container {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .hero-image {
+        display: none;
+    }
+}
+
+.hero-section .col-lg-6 {
+    padding: 0 15px;
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.feature-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+    height: 100%;
+    background-color: #3a5167;
+    color: white;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.cta-section {
+    background-color: #1e1e1e;
+    border-radius: 1rem;
+    padding: 3rem;
+    margin-top: 3rem;
+    color: white;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+}
+
+.how-it-works-card {
+    background-color: #1e1e1e;
+    border-radius: 1rem;
+    overflow: hidden;
+    color: white;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #333;
+    position: relative;
+}
+
+.how-it-works-card p {
+    flex-grow: 1;
+}
+
+.row .col-lg-4 {
+    display: flex;
+    flex-direction: column;
+}
+
+.how-it-works-card h4 {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+}
+
+.how-it-works-icon {
+    font-size: 2rem;
+    color: white;
+    background-color: rgba(52, 152, 219, 0.2);
+    width: 4rem;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.how-it-works-card h4, .how-it-works-card p {
+    color: white;
+}
+
+/* Улучшение изображения в hero-секции */
+.hero-image {
+    max-width: 100%;
+    display: block;
+    height: auto;
+    float: right;
+}
+
+/* Карточки в секции "Как это работает" */
+.equal-height-cards {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.equal-height-cards .col-lg-4 {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.how-it-works-card {
+    background-color: #1e1e1e;
+    border-radius: 1rem;
+    overflow: hidden;
+    color: white;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #333;
+    position: relative;
+}
+
+.how-it-works-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.how-it-works-icon {
+    margin-bottom: 1.5rem;
+}
+
+.step-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+}
+
+.step-description {
+    margin-bottom: 0;
+    flex-grow: 1;
+}
+
+/* Стили для страницы входа */
+.login-container {
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+.login-card {
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+.login-header {
+    border-radius: 1rem 1rem 0 0;
+}
+
+.login-footer {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 1rem 1rem;
+    padding: 1rem;
+}
+
+.brand-logo {
+    max-width: 120px;
+    margin-bottom: 1.5rem;
+}
+
+/* Стили для страницы регистрации */
+.register-container {
+    max-width: 550px;
+    margin: 0 auto;
+}
+
+.register-card {
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+.register-header {
+    border-radius: 1rem 1rem 0 0;
+}
+
+.register-footer {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 0 0 1rem 1rem;
+    padding: 1rem;
+}
+
+.password-requirements {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.password-requirements ul {
+    padding-left: 1.2rem;
+    margin-bottom: 0;
+}
+
+/* Стили для сопряжения устройств */
+.pairing-steps {
+    counter-reset: step;
+    margin-bottom: 2rem;
+}
+
+.pairing-step {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-left: 3rem;
+    position: relative;
+}
+
+.pairing-step:before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: #3498db;
+    color: white;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.pairing-step-content {
+    flex: 1;
+}
+
+.pairing-step-title {
+    font-weight: bold;
+    margin-bottom: 0.75rem;
+    color: var(--text-light);
+}
+
+.pairing-code-input {
+    letter-spacing: 0.5em;
+    font-size: 1.5rem;
+    text-align: center;
+    font-weight: bold;
+    background-color: rgba(52, 152, 219, 0.1);
+    color: var(--text-light);
+    border-color: rgba(52, 152, 219, 0.3);
+    padding: 1rem 0.5rem;
+}
+
+.device-icon {
+    max-width: 150px;
+    margin: 0 auto 1.5rem;
+    display: block;
+}
+
+.pairing-step-content {
+    flex: 1;
+    padding: 0.5rem 0;
+}
+
+/* Глобальные стили для текста */
+.text-white {
+    color: white !important;
+}
+
+.text-primary {
+    color: #3498db !important;
+}
+
+/* Цвет текста для темных фонов */
+.bg-primary {
+    background-color: var(--primary-color) !important;
+}
+
+/* Глобальные стили для разделов */
+.py-5.bg-light {
+    background-color: var(--bg-darker) !important;
+}
+
+.container.mb-5 h2,
+.container.mb-5 .row h4, 
+.container.mb-5 .row p,
+.container.mb-5 .card-title,
+.container.mb-5 .card-text,
+.container.mb-5 .text-center,
+.container.mb-5 .text-muted {
+    color: inherit !important;
+}
+
+/* Стили для кнопок */
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+
+/* Формы ввода в темной теме */
+.form-control, .form-select {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    color: var(--text-light);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(109, 144, 172, 0.25);
+    color: var(--text-light);
+}
+
+.form-label {
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+/* Фиксы для темы карточек */
+.card-header {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-light);
+}
+
+.card-title {
+    color: var(--text-light) !important;
+}
+
+.card-text {
+    color: var(--text-secondary) !important;
+}
+
+/* Кнопки */
+.btn-outline-primary {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.btn-outline-secondary {
+    color: var(--text-secondary);
+    border-color: var(--card-border);
+}
+
+.btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--card-border);
+    color: var(--text-light);
+}
+
+/* Согласованный фон для секций */
+section {
+    background-color: var(--bg-dark);
+}
+
+/* Переопределение стилей для темной темы */
+.bg-light {
+    background-color: var(--bg-darker) !important;
+}
+
+/* Более контрастные цвета текста для карточек */
+.feature-card h4, 
+.feature-card p {
+    color: white !important;
+}
+
+.how-it-works-card h4,
+.how-it-works-card p {
+    color: white !important;
+}
+
+/* Заголовки */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-light);
+}
+
+/* Стиль для ссылок - убираем подчеркивание */
+a, a:hover, a:focus, a:active {
+    text-decoration: none !important;
+}
+
+/* Ссылки и навигация */
+a {
+    color: #3498db;
+}
+
+a:hover {
+    color: #2980b9;
+}
+
+/* Дополнительные стили для текста в темной теме */
+p {
+    color: var(--text-light);
+}
+
+/* Улучшение контрастности для карточек */
+.card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: none;
+}
+
+/* Карточки функций сайта */
+.feature-card {
+    background-color: #1e1e1e;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+}
+
+.how-it-works-card {
+    background-color: #1e1e1e;
+}
+
+/* CTA секция */
+.cta-section {
+    background-color: #1e1e1e;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+}
+
+/* Улучшение кнопок */
+.btn-light {
+    background-color: #e0e0e0;
+    border-color: #e0e0e0;
+    color: #333;
+}
+
+.btn-light:hover {
+    background-color: #d0d0d0;
+    border-color: #d0d0d0;
+}
+
+.btn-outline-light {
+    border-color: #e0e0e0;
+    color: #e0e0e0;
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: #e0e0e0;
+    color: #fff;
+}
+
+/* Адаптация для темного интерфейса */
+.badge.bg-success {
+    background-color: #2ecc71 !important;
+}
+
+.badge.bg-secondary {
+    background-color: #495057 !important;
+}
+
+/* Переопределение стилей для единого фона */
+body, section, .app-container, .main-content, .py-5.bg-light {
+    background-color: var(--bg-dark) !important;
+}
+
+/* Яркие карточки */
+.feature-card:nth-child(1) .card {
+    background-color: #2980b9;
+    border-color: #3498db;
+}
+
+.feature-card:nth-child(2) .card {
+    background-color: #2980b9;
+    border-color: #3498db;
+}
+
+.feature-card:nth-child(3) .card {
+    background-color: #16a085;
+    border-color: #1abc9c;
+}
+
+/* Акцентные иконки */
+.feature-icon {
+    font-size: 2.5rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.feature-card:nth-child(1) .feature-icon {
+    color: #3498db;
+}
+
+.feature-card:nth-child(2) .feature-icon {
+    color: #3498db;
+}
+
+.feature-card:nth-child(3) .feature-icon {
+    color: #1abc9c;
+}
+
+/* Акцентные элементы для "Как это работает" */
+.how-it-works-icon {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+}
+
+.how-it-works-card:nth-child(1) .how-it-works-icon {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+}
+
+.how-it-works-card:nth-child(2) .how-it-works-icon {
+    background-color: rgba(52, 152, 219, 0.2);
+    color: #3498db;
+}
+
+.how-it-works-card:nth-child(3) .how-it-works-icon {
+    background-color: rgba(26, 188, 156, 0.2);
+    color: #1abc9c;
+}
+
+/* CTA секция с градиентом */
+.cta-section {
+    background: linear-gradient(135deg, #1e1e1e 0%, #292929 100%);
+    border: 1px solid #333;
+}
+
+/* Ссылки и навигация */
+a {
+    color: #3498db;
+}
+
+a:hover {
+    color: #2980b9;
+}
+
+.nav-link.active {
+    background-color: rgba(52, 152, 219, 0.15);
+    color: #3498db !important;
+}
+
+.nav-link[href="/routes/"].active {
+    background-color: rgba(52, 152, 219, 0.15);
+    color: #3498db !important;
+}
+
+.badge.bg-success {
+    background-color: #2ecc71 !important;
+}
+
+.card-header.bg-primary {
+    background-color: #3498db !important;
+}
+
+/* Единый стиль для анимации карточек */
+.feature-card, .how-it-works-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover, .how-it-works-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Удаляем обработчик hover из предыдущего определения */
+.feature-card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.2);
+    height: 100%;
+    background-color: #3a5167;
+    color: white;
+}
+
+/* Упрощение изображения в hero-секции */
+.hero-image {
+    max-width: 100%;
+    display: block;
+    height: auto;
+    float: right;
+}
+
+/* Изменяем стиль how-it-works-card, чтобы было пристойнее */
+.how-it-works-card {
+    background-color: #1e1e1e;
+    border-radius: 1rem;
+    overflow: hidden;
+    color: white;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #333;
+    position: relative;
+}
+
+/* Стили для секции с устройствами */
+.sidebar-heading {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sidebar-heading a {
+    color: var(--accent-color);
+}
+
+.sidebar-heading a:hover {
+    color: var(--primary-color);
+}
+
+.device-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.device-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    position: relative;
+    font-size: 0.9rem;
+}
+
+.device-item i {
+    margin-right: 10px;
+    color: var(--text-muted);
+}
+
+.device-item:hover {
+    background-color: rgba(80, 109, 133, 0.1);
+    color: var(--text-light);
+}
+
+.device-item.active {
+    background-color: rgba(52, 152, 219, 0.15);
+    color: var(--accent-color) !important;
+}
+
+.device-item.active i {
+    color: var(--accent-color);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--text-muted);
+    margin-left: auto;
+}
+
+.status-dot.active {
+    background-color: var(--success-color);
+}
+
+/* Стили для нижней части бокового меню */
+.sidebar-footer {
+    margin-top: 2rem;
+}
+
+.user-info {
+    padding-top: 1rem;
+}
+
+.avatar-placeholder {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-light);
+    font-size: 0.8rem;
+}
+
+.user-name {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Переименование маршрутов в историю */
+.route-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.route-header, .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.device-icon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(52, 152, 219, 0.1);
+    margin: 0 auto;
+}
+
+/* Стили для корректного отображения без бокового меню */
+.no-sidebar .main-content {
+    padding-left: 0;
+    max-width: 100%;
+    width: 100%;
+}
+
+/* Стили для страниц авторизации */
+.no-sidebar .login-card,
+.no-sidebar .register-card {
+    max-width: 450px;
+    margin: 0 auto;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.no-sidebar .brand-logo {
+    max-width: 64px;
+    margin-bottom: 1rem;
+}
+
+/* Медиа-запрос для адаптации основного контента без бокового меню на мобильных устройствах */
+@media (max-width: 768px) {
+    .no-sidebar .main-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 }

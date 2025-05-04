@@ -4,28 +4,6 @@
 {% block title %}Вход | Oryx Smart Speedometer{% endblock %}
 
 {% block extra_css %}
-<style>
-    .login-container {
-        max-width: 450px;
-        margin: 0 auto;
-    }
-    .login-card {
-        border-radius: 1rem;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    }
-    .login-header {
-        border-radius: 1rem 1rem 0 0;
-    }
-    .login-footer {
-        background-color: #f8f9fa;
-        border-radius: 0 0 1rem 1rem;
-        padding: 1rem;
-    }
-    .brand-logo {
-        max-width: 120px;
-        margin-bottom: 1.5rem;
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -33,15 +11,15 @@
     <div class="row">
         <div class="col-12 login-container">
             <div class="text-center mb-4">
-                <img src="{% static 'img/logo.png' %}" alt="Oryx" class="brand-logo" onerror="this.src='https://via.placeholder.com/120x60?text=ORYX'">
+                <img src="{% static 'img/logo.png' %}" alt="Oryx" class="brand-logo">
                 <h2 class="mb-4">Умный спидометр</h2>
             </div>
-            
+
             <div class="card login-card">
                 <div class="card-header bg-primary text-white text-center login-header">
                     <h4 class="my-2">Вход в систему</h4>
                 </div>
-                
+
                 <div class="card-body p-4">
                     {% if messages %}
                     <div class="alert alert-danger">
@@ -50,35 +28,35 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-                    
+
                     <form method="post" action="{% url 'login' %}">
                         {% csrf_token %}
-                        
+
                         <div class="form-group mb-3">
                             <label for="username" class="form-label">Имя пользователя</label>
                             <input type="text" class="form-control" id="username" name="username" required>
                         </div>
-                        
+
                         <div class="form-group mb-4">
                             <label for="password" class="form-label">Пароль</label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        
+
                         <div class="d-grid">
                             <button type="submit" class="btn btn-primary btn-lg">Войти</button>
                         </div>
                     </form>
                 </div>
-                
+
                 <div class="login-footer text-center">
                     <p class="mb-0">Нет аккаунта? <a href="{% url 'register' %}" class="text-primary">Зарегистрироваться</a></p>
                 </div>
             </div>
-            
-            <div class="text-center mt-4 text-muted">
-                <p>Oryx Smart Speedometer &copy; 2023</p>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'home' %}" class="text-decoration-none">Вернуться на главную</a>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}
