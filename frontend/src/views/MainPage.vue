@@ -1,18 +1,18 @@
 <template>
-  <div>
-    <header>
-      <h1>Oryx</h1>
-    </header>
-    <main>
-      <h1>Главная страница</h1>
-      <p>Добро пожаловать на главную страницу!</p>
-      <md-filled-text-field label="Ваше имя" v-model="name" style="margin-bottom: 16px;" />
-      <md-filled-button @click="sayHello">Material Кнопка</md-filled-button>
-    </main>
-    <footer>
-      <p>© 2024 My App</p>
-    </footer>
+  <div class="OnSurfaceCont">
+    <div class="MainDescription">
+      <h1 id="MainHeader">Oryx</h1>
+      <p>
+        Lorem ipsum, dolor sit amet consectetur adipisicing elit. Labore odit doloremque neque
+        facere placeat numquam vel recusandae hic harum rerum. Distinctio vel consequatur debitis
+        aut eius nisi excepturi minus laboriosam!
+      </p>
+    </div>
+    <img src="@/assets/hero.jpg" alt="bike" />
   </div>
+  <footer>
+    <p>© 2024 My App</p>
+  </footer>
 </template>
 
 <script setup>
@@ -21,16 +21,34 @@ import '@material/web/textfield/filled-text-field.js'
 </script>
 
 <style scoped>
-
-header {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  border-radius: var(--md-sys-shape-corner-large);
-  padding: 10px;
-  height: 5rem;
-  width: 100%;
+.OnSurfaceCont {
   display: flex;
-  align-items: center;
+  flex-direction: row;
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
+  background-color: var(--md-sys-color-primary-container);
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  padding: 1.5rem 3rem;
+  max-width: 50vw;
 }
 
+.OnSurfaceCont img {
+  width: 300px;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.MainDescription {
+  max-width: 35%;
+  margin-bottom: 30px;
+}
+.OnSurfaceCont p {
+  color: var(--md-sys-color-on-primary-container);
+}
+
+#MainHeader {
+  color: var(--md-sys-color-on-background);
+}
 </style>
